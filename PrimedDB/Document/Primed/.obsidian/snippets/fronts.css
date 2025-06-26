@@ -1,0 +1,25 @@
+/* 定义字体族 */
+@font-face {
+  font-family: 'JetBrainsMono-Medium';
+  src: url('app:JetBrainsMono-Medium.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 应用字体到编辑器 */
+.cm-s-obsidian pre.HyperMD-codeblock,
+.markdown-rendered pre code {
+  font-family: 'JetBrainsMono-Medium', -apple-system, monospace !important;
+}
+.cm-s-obsidian span.cm-inline-code,
+.markdown-rendered code {
+  font-family: 'JetBrainsMono-Medium', monospace !important;
+}
+
+/* 应用字体到界面元素 */
+body {
+  --font-text: 'JetBrainsMono-Medium', sans-serif;
+  --font-interface: 'JetBrainsMono-Medium', sans-serif;
+  --font-editor: 'JetBrainsMono-Medium', monospace;
+}

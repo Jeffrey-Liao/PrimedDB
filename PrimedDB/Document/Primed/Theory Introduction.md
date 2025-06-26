@@ -10,5 +10,5 @@ For instance we had a record below:
 | prime key   | 7    | 11           | 13             | 1001          |
 We can convert *Jeff* into 7 then do mod calculation with 1001 then check the result is zero or not when we want to query does *Jeff* is part of current record.
 
-Also, the database will not give the original data to user but a record number. So that, potential attacker will not get original data when he trying to get the query result illegally.
+Also, the database will not give the original data to user but a record number. So that, potential attacker of the system will not get original data when he trying to get the query result illegally.
 

@@ -8,6 +8,7 @@ namespace liao::message
 {
 	Log Log::logger;
 	mutex Log::lockMutex;	
+	mutex Log::LogStream::logStreamMutex;
 	static mutex timeMutex;
 	static string GetTime()
 	{
@@ -49,77 +50,81 @@ namespace liao::message
 		printLine(message);
 	}
 
-	Log::LogStream Log::printError(string&& message)
+	void Log::printError(string&& message,string&& fileName)
 	{
-		return printError(message);
+		printError(message,fileName);
 	}
 
-	Log::LogStream Log::printDebug(string&& message)
+	void Log::printDebug(string&& message, string&& fileName)
 	{
-		return printDebug(message);
+		printDebug(message,fileName);
 	}
-	Log::LogStream Log::printMessage(string&& message)
+
+	void Log::printMessage(string&& message, string&& fileName)
 	{
-		return printMessage(message);
+		printMessage(message, fileName);
 	}
-	Log::LogStream Log::printError(const std::string& message)
+
+	void Log::printError(const std::string& message, string& fileName)
 	{
 		string cache;
 		{
 			std::lock_guard<std::mutex> lock(lockMutex);
-			cache = format("{} - [{}]: {} \n", GetTime(), "Error", message);
+			cache = format("{} - [{}]: {}", GetTime(), "Error", message);
+			LogStream temp = LogStream(cache);
+			temp.openToFile(fileName);
+			logEndl(temp);
 		}
-		return LogStream(cache);
+
 	}
-	Log::LogStream Log::printDebug(const std::string& message)
+	void Log::printDebug(const std::string& message, string& fileName)
 	{
 		string cache;
 		{
 			std::lock_guard<std::mutex> lock(lockMutex);
-			cache = format("{} - [{}]: {} \n", GetTime(), "Debug", message);
+			cache = format("{} - [{}]: {}", GetTime(), "Debug", message);
+			LogStream temp = LogStream(cache);
+			temp.openToFile(fileName);
+			logEndl(temp);
 		}
-		return LogStream(cache);
+
 	}
-	Log::LogStream Log::printMessage(const std::string& message)
+	void Log::printMessage(const std::string& message, string& fileName)
 	{
 		string cache;
 		{
 			std::lock_guard<std::mutex> lock(lockMutex);
-			cache = format("{} - [{}]: {} \n", GetTime(), "Message", message);
+			cache = format("{} - [{}]: {}", GetTime(), "Message", message);
+			LogStream temp = LogStream(cache);
+			temp.openToFile(fileName);
+			logEndl(temp);
 		}
-		return LogStream(cache);
 	}
 
-	Log::LogStream Log::printError(ClassInfor& error, const std::string& message = "")
+	void Log::printError(ClassInfor& error, const std::string& message, string& fileName)
 	{
-		std::lock_guard<std::mutex> lock(lockMutex);
-		return printError(format("in {} that {}",error.CompleteInfor(), message));
+		printError(format("in {}that {}",error.CompleteInfor(), message),fileName);
 	}
-	Log::LogStream Log::printDebug(ClassInfor& error, const std::string& message = "")
+	void Log::printDebug(ClassInfor& error, const std::string& message, string& fileName)
 	{
-		std::lock_guard<std::mutex> lock(lockMutex);
-		return printDebug(format("in {} that {}", error.CompleteInfor(), message));
+		printDebug(format("in {}that {}", error.CompleteInfor(), message), fileName);
 	}
-	Log::LogStream Log::printMessage(ClassInfor& error, const std::string& message = "")
+	void Log::printMessage(ClassInfor& error, const std::string& message, string& fileName)
 	{
-		std::lock_guard<std::mutex> lock(lockMutex);
-		return printMessage(format("in {} that {}", error.CompleteInfor(), message));
+		printMessage(format("in {}that {}", error.CompleteInfor(), message),fileName);
 	}
 
-	Log::LogStream Log::printError(ClassInfor& error, std::string&& message = "")
+	void Log::printError(ClassInfor& error, std::string&& message, string&& fileName)
 	{
-		std::lock_guard<std::mutex> lock(lockMutex);
-		return printError(format("in {} that {}", error.CompleteInfor(), message));
+		printError(format("in {}that {}", error.CompleteInfor(), message),fileName);
 	}
-	Log::LogStream Log::printDebug(ClassInfor& error, std::string&& message = "")
+	void Log::printDebug(ClassInfor& error, std::string&& message, string&& fileName)
 	{
-		std::lock_guard<std::mutex> lock(lockMutex);
-		return printDebug(format("in {} that {}", error.CompleteInfor(), message));
+		printDebug(format("in {}that {}", error.CompleteInfor(), message),fileName);
 	}
-	Log::LogStream Log::printMessage(ClassInfor& error, std::string&& message = "")
+	void Log::printMessage(ClassInfor& error, std::string&& message,string&& fileName)
 	{
-		std::lock_guard<std::mutex> lock(lockMutex);
-		return printMessage(format("in {} that {}", error.CompleteInfor(), message));
+		printMessage(format("in {}that {}", error.CompleteInfor(), message),fileName);
 	}
 
 	Log::LogStream Log::operator[](LogType type)
@@ -133,10 +138,12 @@ namespace liao::message
 
 	void Log::logEndl(LogStream& obj)
 	{
-		std::lock_guard<std::mutex> lock(lockMutex);
-		cout << obj.cache<<endl;
-		if(obj.logFile.is_open())
+		cout << obj.cache << endl;
+		if (obj.logFile.is_open())
+		{
+			std::lock_guard<std::mutex> lock(obj.logStreamMutex);
 			obj.logFile << obj.cache << endl;
+		}
 	}
 	Log::LogStream& Log::LogStream::openToFile(string&& name)
 	{
@@ -144,9 +151,12 @@ namespace liao::message
 	}
 	Log::LogStream& Log::LogStream::openToFile(string& name)
 	{
-		auto curPath = fs::current_path()/LOG_FOLDER;
-		curPath.append(name);
-		logFile.open(curPath, ios::app);
+		if (name != "")
+		{
+			auto curPath = fs::current_path() / LOG_FOLDER;
+			curPath.append(name);
+			logFile.open(curPath, ios::app);
+		}
 		return *this;
 	}
 
@@ -167,7 +177,7 @@ namespace liao::message
 		:type(type), cache(format("{} - [{}]:", GetTime(), getLabel(type)))
 	{}
 	Log::LogStream::LogStream(string& message)
-		: type(LogType::None), cache(format("{} - {}", GetTime(), message))
+		: type(LogType::None), cache(message)
 	{}
 	Log::LogStream& Log::LogStream::operator()(ClassInfor& error)
 	{

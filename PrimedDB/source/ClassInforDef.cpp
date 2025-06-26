@@ -38,13 +38,13 @@ namespace liao::message
 	string ClassInfor::raw2ParameterList(string& functionSig)
 	{
 		auto pos4LBracket = functionSig.find_first_of("("),
-			pos4RBracket = functionSig.find_first_of(")");
+			pos4RBracket = functionSig.find_last_of(")");
 		//if no () pair was found, then return a empty string back to constructor
 		if (SubStrNotFound(pos4LBracket) || SubStrNotFound(pos4RBracket))
 			return "";
 		else
-			return functionSig.substr(pos4LBracket
-				, pos4RBracket - pos4LBracket + 1);
+			return functionSig.substr(pos4LBracket+1
+				, pos4RBracket - pos4LBracket-1);
 	}
 	string ClassInfor::raw2ReturnType(string& functionSig) 
 	{
@@ -60,14 +60,14 @@ namespace liao::message
 		string cache;
 		if (!ClassName.empty())
 			cache += "{" + ClassName + "} ";
-		else if (!FunctionName.empty())
+		if (!FunctionName.empty())
 			cache += "[" + FunctionName + "] ";
-		else if(!ParameterList.empty())
+		if(!ParameterList.empty())
 			cache += "(" + ParameterList + ") ";
-		else if(LineNumber != -1)
+		if(LineNumber != -1)
 			cache +="at line " + to_string(LineNumber)+" ";
-		else if(!FileDirectory.empty())
-			cache += "in " + FileDirectory;
+		if(!FileDirectory.empty())
+			cache += "in " + FileDirectory+" ";
 		return cache;
 		//{className} [functionName] (parameterList) at line * in D://
 	}
@@ -89,10 +89,10 @@ namespace liao::message
 			complete = combineToComplete();
 		return complete;
 	}
-	ClassInfor::operator string()
-	{
-		return this->CompleteInfor();
-	}
+	//ClassInfor::operator string()
+	//{
+	//	return this->CompleteInfor();
+	//}
 	constexpr bool ClassInfor::SubStrNotFound(size_t pos)
 	{
 		return pos == string::npos;

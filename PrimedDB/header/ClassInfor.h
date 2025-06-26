@@ -62,8 +62,6 @@ namespace liao::message
 		//The file path of current source file.
 		const std::string FileDirectory;
 
-		//==Compelete information
-		operator string();
 
 		//Check the string pos is -infinity or not
 		constexpr static bool  SubStrNotFound(size_t pos);
