@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Storage">
+      <UniqueIdentifier>{a2c38ee3-cd75-491c-9e0a-fb634b8dc161}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Primed">
+      <UniqueIdentifier>{0d337ac1-1fa9-4629-b73e-e3fe86781b97}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Infor">
+      <UniqueIdentifier>{8519722d-2f7c-42bf-8c21-4ab7436ba32a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Infor\Header">
+      <UniqueIdentifier>{cbfe33cf-4659-4633-883f-9c4321f74df1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Infor\Source">
+      <UniqueIdentifier>{5248949a-71ea-40df-bd72-8b80e043aa52}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Test">
+      <UniqueIdentifier>{ec797fa1-5792-419d-ae06-790003bed979}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="source\LogDef.cpp">
+      <Filter>Infor\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\ClassInforDef.cpp">
+      <Filter>Infor\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Test.cpp">
+      <Filter>Test</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="header\Log.h">
+      <Filter>Infor\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\ClassInfor.h">
+      <Filter>Infor\Header</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
