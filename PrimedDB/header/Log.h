@@ -20,7 +20,7 @@ namespace liao::message
 	{
 		class LogStream;
 	public:
-		static void logEndl(LogStream& obj);
+		static void LogEndl(LogStream& obj);
 	private:
 		class LogStream
 		{
@@ -35,6 +35,14 @@ namespace liao::message
 
 			LogStream(string& message);
 
+			LogStream& append(const string& message);
+
+			LogStream& append(string&& message);
+
+			LogStream& remove(const string& message);
+
+			LogStream& remove(string&& message);
+
 			LogType getType() const;
 
 			LogStream& openToFile(string&& name);
@@ -45,11 +53,11 @@ namespace liao::message
 
 			LogStream& operator()(const char*);
 
-			LogStream& operator<<(const std::string&&);
+			LogStream& operator<<(std::string&&);
 
 			LogStream& operator<<(const std::string&);
 
-			friend void Log::logEndl(LogStream& obj);
+			friend void Log::LogEndl(LogStream& obj);
 
 			void operator<<(void(*p)(LogStream&));
 
@@ -72,10 +80,10 @@ namespace liao::message
 	public:
 		static Log& Get();
 
-		static void print(const string& message);
-		static void print(string&& message);
-		static void printLine(const string& message);
-		static void printLine(string&& message);
+		static void Print(const string& message);
+		static void Print(string&& message);
+		static void PrintLine(const string& message);
+		static void PrintLine(string&& message);
 
 		////////////////////////////////////////////////////////////////
 
@@ -104,6 +112,5 @@ namespace liao::message
 		////////////////////////////////////////////////////////////////
 		
 		LogStream operator[](LogType type);
-		LogStream operator[](string&& notation);
 	};
 }

@@ -88,14 +88,14 @@ The is a helper function which combined all variable into  "{*ClassName*} \[*Fun
 ---
 # Members
 
-| visibility | type            | name          |                                                                                                |
-| ---------- | --------------- | ------------- | ---------------------------------------------------------------------------------------------- |
-| public     | const string    | FunctionName  | It contains the ==function name== of the place which construct current ClassInfor instance     |
-| public     | const string    | ClassName     | It contains the ==class name== of the place which construct current ClassInfor instance        |
-| public     | const string    | ParameterList | It contains the ==parameter list== of the function which construct current ClassInfor instance |
-| public     | const string    | ReturnType    | It contains the ==return type== of the function which construct current ClassInfor instance    |
-| public     | const string    | FileDirectory | It contains the ==file name== of the file which construct current ClassInfor instance          |
-| public     | const long long | LineNumber    | It contains the ==line number== of the line which construct current ClassInfor instance        |
+| **visibility** | **type**        | **name**      |                                                                                                |
+| -------------- | --------------- | ------------- | ---------------------------------------------------------------------------------------------- |
+| public         | const string    | FunctionName  | It contains the ==function name== of the place which construct current ClassInfor instance     |
+| public         | const string    | ClassName     | It contains the ==class name== of the place which construct current ClassInfor instance        |
+| public         | const string    | ParameterList | It contains the ==parameter list== of the function which construct current ClassInfor instance |
+| public         | const string    | ReturnType    | It contains the ==return type== of the function which construct current ClassInfor instance    |
+| public         | const string    | FileDirectory | It contains the ==file name== of the file which construct current ClassInfor instance          |
+| public         | const long long | LineNumber    | It contains the ==line number== of the line which construct current ClassInfor instance        |
 
 ---
 # Usage

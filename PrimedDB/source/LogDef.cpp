@@ -33,21 +33,21 @@ namespace liao::message
 	{
 		return Logger;
 	}
-	void Log::print(const string& message)
+	void Log::Print(const string& message)
 	{
 		cout<< message;
 	}
-	void Log::print(string&& message)
+	void Log::Print(string&& message)
 	{
-		print(message);
+		Print(message);
 	}
-	void Log::printLine(const string& message)
+	void Log::PrintLine(const string& message)
 	{
 		cout << format("{} - {}",GetTime(),message)<< endl;
 	}
-	void Log::printLine(string&& message)
+	void Log::PrintLine(string&& message)
 	{
-		printLine(message);
+		PrintLine(message);
 	}
 
 	void Log::printError(string&& message,string&& fileName)
@@ -73,7 +73,7 @@ namespace liao::message
 			cache = format("{} - [{}]: {}", GetTime(), "Error", message);
 			LogStream temp = LogStream(cache);
 			temp.openToFile(fileName);
-			logEndl(temp);
+			LogEndl(temp);
 		}
 
 	}
@@ -85,7 +85,7 @@ namespace liao::message
 			cache = format("{} - [{}]: {}", GetTime(), "Debug", message);
 			LogStream temp = LogStream(cache);
 			temp.openToFile(fileName);
-			logEndl(temp);
+			LogEndl(temp);
 		}
 
 	}
@@ -97,7 +97,7 @@ namespace liao::message
 			cache = format("{} - [{}]: {}", GetTime(), "Message", message);
 			LogStream temp = LogStream(cache);
 			temp.openToFile(fileName);
-			logEndl(temp);
+			LogEndl(temp);
 		}
 	}
 
@@ -131,18 +131,15 @@ namespace liao::message
 	{
 		return LogStream(type);
 	}
-	Log::LogStream Log::operator[](string&& notation)
-	{
-		return LogStream(notation);
-	}
 
-	void Log::logEndl(LogStream& obj)
+	void Log::LogEndl(LogStream& obj)
 	{
 		cout << obj.cache << endl;
 		if (obj.logFile.is_open())
 		{
 			std::lock_guard<std::mutex> lock(obj.LogStreamMutex);
 			obj.logFile << obj.cache << endl;
+			obj.cache.clear();
 		}
 	}
 	Log::LogStream& Log::LogStream::openToFile(string&& name)
@@ -155,6 +152,8 @@ namespace liao::message
 		{
 			auto curPath = fs::current_path() / LOG_FOLDER;
 			curPath.append(name);
+			if(logFile.is_open())
+				logFile.close();
 			logFile.open(curPath, ios::app);
 		}
 		return *this;
@@ -184,17 +183,40 @@ namespace liao::message
 		cache += format(" in {} that", error.CompleteInfor());
 		return *this;
 	}
-	Log::LogStream& Log::LogStream::operator<<(const std::string&& message)
+	Log::LogStream& Log::LogStream::append(const string& message)
 	{
 		cache += " ";
 		cache += message;
 		return *this;
 	}
+
+	Log::LogStream& Log::LogStream::append(string&& message)
+	{
+		return append(message);
+	}
+
+	Log::LogStream& Log::LogStream::remove(const string& message)
+	{
+		auto subStringPos = cache.find(" "+message);
+		if (!ClassInfor::SubStrNotFound(subStringPos))
+		{
+			cache.erase(subStringPos, message.length() + 1);
+		}
+		return *this;
+	}
+
+	Log::LogStream& Log::LogStream::remove(string&& message)
+	{
+		return remove(message);
+	}
+
+	Log::LogStream& Log::LogStream::operator<<(std::string&& message)
+	{
+		return append(message);
+	}
 	Log::LogStream& Log::LogStream::operator<<(const std::string& message)
 	{
-		cache += " ";
-		cache += message;
-		return *this;
+		return append(message);
 	}
 	Log::LogStream& Log::LogStream::operator()(const char* classInfor)
 	{
