@@ -25,9 +25,9 @@ namespace liao::message
 		class LogStream
 		{
 			std::string cache;
-			const LogType type;
+			const LogType TYPE;
 			std::ofstream logFile;
-			static std::mutex logStreamMutex;
+			static std::mutex LogStreamMutex;
 		private:
 			string getLabel(LogType) const;
 		public:
@@ -56,9 +56,9 @@ namespace liao::message
 			~LogStream();
 		};
 
-		static std::mutex logMutex;
+		static std::mutex LogMutex;
 
-		static Log logger;
+		static Log Logger;
 
 	private:
 		Log();

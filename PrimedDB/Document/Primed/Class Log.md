@@ -9,8 +9,6 @@
 class Log
 {
 	class LogStream;
-public:
-	static void logEndl(LogStream& obj);
 private:
 	static std::mutex lockMutex;
 	static Log logger;
@@ -21,6 +19,8 @@ private:
 	Log(const Log&& obj) = delete;
 public:
 	static Log& Get();
+
+	static void logEndl(LogStream& obj);
 
 	static void print(const string& message);
 	static void print(string&& message);
@@ -94,11 +94,21 @@ class LogStream
 ```
 ---
 # Specification
-## Public Methods
+## Log - Public Methods
+
+### `static Log& Get()`
+The get function for singleton instance which return the static member logger;
+
+
+## Log - Private Methods
+
+
+## LogStream - Public Methods
 
 
 
-## Private Methods
+## LogStream - Private Methods
+
 
 
 

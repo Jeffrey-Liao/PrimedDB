@@ -6,9 +6,9 @@
 using namespace std;
 namespace liao::message
 {
-	Log Log::logger;
-	mutex Log::lockMutex;	
-	mutex Log::LogStream::logStreamMutex;
+	Log Log::Logger;
+	mutex Log::LogMutex;	
+	mutex Log::LogStream::LogStreamMutex;
 	static mutex timeMutex;
 	static string GetTime()
 	{
@@ -31,7 +31,7 @@ namespace liao::message
 	}
 	Log& Log::Get()
 	{
-		return logger;
+		return Logger;
 	}
 	void Log::print(const string& message)
 	{
@@ -69,7 +69,7 @@ namespace liao::message
 	{
 		string cache;
 		{
-			std::lock_guard<std::mutex> lock(lockMutex);
+			std::lock_guard<std::mutex> lock(LogMutex);
 			cache = format("{} - [{}]: {}", GetTime(), "Error", message);
 			LogStream temp = LogStream(cache);
 			temp.openToFile(fileName);
@@ -81,7 +81,7 @@ namespace liao::message
 	{
 		string cache;
 		{
-			std::lock_guard<std::mutex> lock(lockMutex);
+			std::lock_guard<std::mutex> lock(LogMutex);
 			cache = format("{} - [{}]: {}", GetTime(), "Debug", message);
 			LogStream temp = LogStream(cache);
 			temp.openToFile(fileName);
@@ -93,7 +93,7 @@ namespace liao::message
 	{
 		string cache;
 		{
-			std::lock_guard<std::mutex> lock(lockMutex);
+			std::lock_guard<std::mutex> lock(LogMutex);
 			cache = format("{} - [{}]: {}", GetTime(), "Message", message);
 			LogStream temp = LogStream(cache);
 			temp.openToFile(fileName);
@@ -141,7 +141,7 @@ namespace liao::message
 		cout << obj.cache << endl;
 		if (obj.logFile.is_open())
 		{
-			std::lock_guard<std::mutex> lock(obj.logStreamMutex);
+			std::lock_guard<std::mutex> lock(obj.LogStreamMutex);
 			obj.logFile << obj.cache << endl;
 		}
 	}
@@ -174,10 +174,10 @@ namespace liao::message
 	}
 
 	Log::LogStream::LogStream(LogType type)
-		:type(type), cache(format("{} - [{}]:", GetTime(), getLabel(type)))
+		:TYPE(type), cache(format("{} - [{}]:", GetTime(), getLabel(type)))
 	{}
 	Log::LogStream::LogStream(string& message)
-		: type(LogType::None), cache(message)
+		:TYPE(LogType::None), cache(message)
 	{}
 	Log::LogStream& Log::LogStream::operator()(ClassInfor& error)
 	{
@@ -204,7 +204,7 @@ namespace liao::message
 	}
 	LogType Log::LogStream::getType() const
 	{
-		return type;
+		return TYPE;
 	}
 	void Log::LogStream::operator<<(void (*p)(LogStream&))
 	{
