@@ -1,30 +1,35 @@
 #include "header/Log.h"
 #include <thread>
+
+#include <chrono>
+
 using namespace liao::message;
 using namespace std;
-void t1()
-{
-	for (int n = 0; n < 100; ++n)
-	{
-		Log& ref = Log::Get();
-		ClassInfor instance(THISFUNC);
-		ref.printError(instance, "hello world","");
-	}
-}
-void t2()
-{
-	for (int n = 0; n < 100; ++n)
-	{
-		Log& ref = Log::Get();
-		ClassInfor instance(THISFUNC);
-		ref.printError(instance, "hello world","");
-	}
 
+void primed(string& message)
+{
+
+    hash_obj.Update((const CryptoPP::byte*)message.data(), message.size());
+    hash_obj.Final(result);
+    // 将字节流转换为大整数
+    CryptoPP::Integer x(result, CryptoPP::SHA256::DIGESTSIZE);
+    
+    //std::cout << result <<"\n";
+    //std::cout << "SHA-256 as BigInteger: " << x << "\n";
+    //cout << endl;
+}
+void compare(string& message)
+{
+    int n = message.size();
+    //cout << message << endl;
 }
 int main()
 {	
-	thread t1_(t1);
-	thread t2_(t2);
-	t1_.join();
-	t2_.join();
+
+    string m;
+    for (int n = 0; n < EXTIME; ++n)
+    {
+        m = to_string(n);
+        primed(m);
+    }
 }

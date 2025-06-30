@@ -93,7 +93,7 @@ namespace liao::message
 	//{
 	//	return this->CompleteInfor();
 	//}
-	constexpr bool ClassInfor::SubStrNotFound(size_t pos)
+	bool ClassInfor::SubStrNotFound(size_t pos)
 	{
 		return pos == string::npos;
 	}

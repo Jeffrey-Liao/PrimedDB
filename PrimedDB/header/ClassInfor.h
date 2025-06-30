@@ -11,7 +11,6 @@
 #else 
 #define THISFUNC __PRETTY_FUNCTION__
 #endif
-#define MY_API __declspec(dllexport)
 
 namespace liao::message
 {
@@ -64,7 +63,7 @@ namespace liao::message
 
 
 		//Check the string pos is -infinity or not
-		constexpr static bool  SubStrNotFound(size_t pos);
+		static bool SubStrNotFound(size_t pos);
 	};
 }
 

@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Theory Introduction.md",
+                "file": "Design/质数哈希函数设计.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Theory Introduction"
+              "title": "质数哈希函数设计"
             }
           },
           {
@@ -217,11 +217,12 @@
   },
   "active": "eacbaea25c691aa5",
   "lastOpenFiles": [
-    "Document introduction.md",
+    "Design/Introduction of Design.md",
+    "Design/质数哈希函数设计.md",
     "Theory Introduction.md",
+    "Document introduction.md",
     "Class Log.md",
     "Class Information.md",
-    "Design/Introduction of Design.md",
     "Design",
     "欢迎.md"
   ]

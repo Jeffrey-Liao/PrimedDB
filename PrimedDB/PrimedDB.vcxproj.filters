@@ -19,6 +19,12 @@
     <Filter Include="Test">
       <UniqueIdentifier>{ec797fa1-5792-419d-ae06-790003bed979}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Primed\Header">
+      <UniqueIdentifier>{f1d9e724-bc3d-497c-819f-ba98dbfce503}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Primed\Source">
+      <UniqueIdentifier>{8bba264c-fddc-4f58-85f2-66ef0a1b55e3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\LogDef.cpp">
@@ -30,6 +36,9 @@
     <ClCompile Include="Test.cpp">
       <Filter>Test</Filter>
     </ClCompile>
+    <ClCompile Include="source\HashGeneratorDef.cpp">
+      <Filter>Primed\Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="header\Log.h">
@@ -37,6 +46,9 @@
     </ClInclude>
     <ClInclude Include="header\ClassInfor.h">
       <Filter>Infor\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="HashGenerator.h">
+      <Filter>Primed\Header</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
