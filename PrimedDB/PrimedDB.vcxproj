@@ -75,6 +75,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>D:\Code\C++\PrimedDB\PrimedDB\externalLib\cryptopp890;D:\Code\C++\PrimedDB\PrimedDB\header;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\Code\C++\PrimedDB\PrimedDB\externalLib\cryptopp890\x64\Output\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -138,20 +139,26 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>D:\Code\C++\PrimedDB\PrimedDB\externalLib\cryptopp890\x64\DLL_Output\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>cryptlib.lib;cryptopp.dll;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\Code\C++\PrimedDB\PrimedDB\externalLib\cryptopp890\x64\Output\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>cryptlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="source\ClassInforDef.cpp" />
-    <ClCompile Include="source\HashGeneratorDef.cpp" />
+    <ClCompile Include="source\HashContainerDef.cpp" />
     <ClCompile Include="source\LogDef.cpp" />
+    <ClCompile Include="source\PrimeNumberConvertDef.cpp" />
     <ClCompile Include="Test.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="HashGenerator.h" />
     <ClInclude Include="header\ClassInfor.h" />
+    <ClInclude Include="header\Column.h" />
+    <ClInclude Include="header\Columns.h" />
+    <ClInclude Include="header\HashContainer.h" />
     <ClInclude Include="header\Log.h" />
+    <ClInclude Include="header\PrimeNumberConvert.h" />
+    <ClInclude Include="header\Schema.h" />
+    <ClInclude Include="header\Table.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

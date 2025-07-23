@@ -1,4 +1,4 @@
-#include "Log.h"
+#include <Log.h>
 #include <chrono>
 #include <iostream>
 #include <ctime>
@@ -146,7 +146,7 @@ namespace liao::message
 	{
 		return openToFile(name);
 	}
-	Log::LogStream& Log::LogStream::openToFile(string& name)
+	Log::LogStream& Log::LogStream::openToFile(const string& name)
 	{
 		if (name != "")
 		{
@@ -175,7 +175,7 @@ namespace liao::message
 	Log::LogStream::LogStream(LogType type)
 		:TYPE(type), cache(format("{} - [{}]:", GetTime(), getLabel(type)))
 	{}
-	Log::LogStream::LogStream(string& message)
+	Log::LogStream::LogStream(const string& message)
 		:TYPE(LogType::None), cache(message)
 	{}
 	Log::LogStream& Log::LogStream::operator()(ClassInfor& error)

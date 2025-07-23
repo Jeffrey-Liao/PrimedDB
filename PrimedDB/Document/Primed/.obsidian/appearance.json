@@ -1,8 +1,8 @@
 {
   "baseFontSizeAction": true,
-  "baseFontSize": 30,
+  "baseFontSize": 23,
   "textFontFamily": "Times New Roman",
-  "monospaceFontFamily": "Constantia",
+  "monospaceFontFamily": "Cambria",
   "cssTheme": "Things",
   "accentColor": "",
   "enabledCssSnippets": []

@@ -116,22 +116,22 @@ This method will print given message to console. It is equivalent to `cout`.
 This method will print given message and current time.
 
 ### `void printError(const std::string& message,string& fileName)/printError(std::string&& message, string&& fileName)`
-Print log message with ==error mode== and write into the file specify by user. This method will call \[*[[#`LogStream& openToFile(string&& name)`|openToFile]]*\] and \[*[[#`static void LogEndl(LogStream& obj)`|LogEndl]]*\]
+Print log message with ==error mode== and write into the file specify by user. This method will call \[*[[#`LogStream& openToFile(string& name)/openToFile(string&& name)`|openToFile]]*\] and \[*[[#`static void LogEndl(LogStream& obj)`|LogEndl]]*\]
 
 ### `void printDebug(const std::string& message,string& fileName)/printDebug(std::string&& message, string&& fileName)`
-Print log message with ==debug mode== and write into the file specify by user. This method will call \[*[[#`LogStream& openToFile(string&& name)`|openToFile]]*\] and \[*[[#`static void LogEndl(LogStream& obj)`|LogEndl]]*\]
+Print log message with ==debug mode== and write into the file specify by user. This method will call \[*[[#`LogStream& openToFile(string& name)/openToFile(string&& name)`|openToFile]]*\] and \[*[[#`static void LogEndl(LogStream& obj)`|LogEndl]]*\]
 
 ### `void printMessage(const std::string& message,string& fileName)/printMessage(std::string&& message,string&& fileName)`
-Print log message with ==message mode== and write into the file specify by user. This method will call \[*[[#`LogStream& openToFile(string&& name)`|openToFile]]*\] and \[*[[#`static void LogEndl(LogStream& obj)`|LogEndl]]*\]
+Print log message with ==message mode== and write into the file specify by user. This method will call \[*[[#`LogStream& openToFile(string& name)/openToFile(string&& name)`|openToFile]]*\] and \[*[[#`static void LogEndl(LogStream& obj)`|LogEndl]]*\]
 
 ### `void printError(ClassInfor& error,const std::string& message, string& fileName)/printError(ClassInfor& error, std::string&& message, string&& fileName)`
-Print log message and class information at error place with ==error mode== and write into the file specify by user. This method will call \[*[[#`LogStream& openToFile(string&& name)`|openToFile]]*\] and \[*[[#`static void LogEndl(LogStream& obj)`|LogEndl]]*\]
+Print log message and class information at error place with ==error mode== and write into the file specify by user. This method will call \[*[[#`LogStream& openToFile(string& name)/openToFile(string&& name)`|openToFile]]*\] and \[*[[#`static void LogEndl(LogStream& obj)`|LogEndl]]*\]
 
 ### `void printDebug(ClassInfor& error,const std::string& message, string& fileName)/printDebug(ClassInfor& error, std::string&& message, string&& fileName)`
-Print log message and class information at error place with ==debug mode== and write into the file specify by user. This method will call \[*[[#`LogStream& openToFile(string&& name)`|openToFile]]*\] and \[*[[#`static void LogEndl(LogStream& obj)`|LogEndl]]*\]
+Print log message and class information at error place with ==debug mode== and write into the file specify by user. This method will call \[*[[#`LogStream& openToFile(string& name)/openToFile(string&& name)`|openToFile]]*\] and \[*[[#`static void LogEndl(LogStream& obj)`|LogEndl]]*\]
 
 ### `void printMessage(ClassInfor& error, const std::string& message, string& fileName)/printMessage(ClassInfor& error, std::string&& message, string&& fileName)`
-Print log message and class information at error place with ==message mode== and write into the file specify by user. This method will call \[*[[#`LogStream& openToFile(string&& name)`|openToFile]]*\] and \[*[[#`static void LogEndl(LogStream& obj)`|LogEndl]]*\]
+Print log message and class information at error place with ==message mode== and write into the file specify by user. This method will call \[*[[#`LogStream& openToFile(string& name)/openToFile(string&& name)`|openToFile]]*\] and \[*[[#`static void LogEndl(LogStream& obj)`|LogEndl]]*\]
 
 ### `LogStream operator[](LogType type)`
 Generate a LogStream instance with type tag, which can provide message write to file and write console feature thread safe.
@@ -143,7 +143,7 @@ None
 ### `LogStream& openToFile(string& name)/openToFile(string&& name)`
 This method will try to open or create a file under `current program path/logFiles`. This function will do nothing if given file name is invalid. This function only open or create a file without write anything into it.
 *This function will automatically close the file if that file still opening*.
-The write procedure will not be done until \[*[[#`static void LogEndl(LogStream& obj)`|LogEndl]]*\] was called.
+The write procedure will not be done until *\[[[#`static void LogEndl(LogStream& obj)`|LogEndl]]\]* was called.
 
 ### `LogStream(LogType type)`
 Construct {*LogStream*} with type. So that the mode of message can be correctly detected when new message append by operator or function.

@@ -1,0 +1,57 @@
+#include <PrimeNumberConvert.h>
+namespace liao::primed::prime
+{
+	unsigned int PrimeNumberConvert::generate(unsigned int number, unsigned int digits)
+	{
+        GmpBigNumber candidate;
+
+        if (digits != 0)
+        {
+            mpz_ui_pow_ui(candidate.get_mpz_t(), 2, digits - 1);  // 2^(target_bits-1)
+        }
+        candidate *= number;
+        if (mpz_even_p(candidate.get_mpz_t())) {
+            candidate++;
+        }
+        mpz_nextprime(candidate.get_mpz_t(), candidate.get_mpz_t());
+        while (mpz_sizeinbase(candidate.get_mpz_t(), 2) < digits) {
+            candidate += 2;
+            mpz_nextprime(candidate.get_mpz_t(), candidate.get_mpz_t());
+        }
+        if (candidate.fits_uint_p())
+            return candidate.get_ui();
+        else
+            return 0;
+	}
+	void PrimeNumberConvert::generate(std::vector<unsigned int>& data, unsigned int digits)
+	{
+        for(int n =0; n < data.size(); n++)
+        {
+            data[n] = generate(data[n], digits);
+		}
+	}
+    void PrimeNumberConvert::generate_big(GmpBigNumber& number, unsigned int digits)
+    {
+        GmpBigNumber enlarge;
+
+        if (digits != 0)
+        {
+            mpz_ui_pow_ui(enlarge.get_mpz_t(), 4, digits);// 2^(target_bits-1)
+        }
+        number *= enlarge;
+        if (mpz_even_p(number.get_mpz_t())) {
+            number++;
+        }
+        mpz_nextprime(number.get_mpz_t(), number.get_mpz_t());
+        while (mpz_sizeinbase(number.get_mpz_t(), 2) < digits) {
+            number += 2;
+            mpz_nextprime(number.get_mpz_t(), number.get_mpz_t());
+        }
+    }
+    bool PrimeNumberConvert::is_prime(const GmpBigNumber& number)
+    {
+        int reps = 25;
+        int result = mpz_probab_prime_p(number.get_mpz_t(), reps);
+        return (result == 2);
+	}
+}

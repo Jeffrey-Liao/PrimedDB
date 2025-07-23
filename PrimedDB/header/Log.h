@@ -33,7 +33,7 @@ namespace liao::message
 		public:
 			LogStream(LogType type);
 
-			LogStream(string& message);
+			LogStream(const string& message);
 
 			LogStream& append(const string& message);
 
@@ -47,7 +47,7 @@ namespace liao::message
 
 			LogStream& openToFile(string&& name);
 
-			LogStream& openToFile(string& name);
+			LogStream& openToFile(const string& name);
 
 			LogStream& operator()(ClassInfor& error);
 

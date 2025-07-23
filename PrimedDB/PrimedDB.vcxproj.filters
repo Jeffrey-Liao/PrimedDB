@@ -25,6 +25,12 @@
     <Filter Include="Primed\Source">
       <UniqueIdentifier>{8bba264c-fddc-4f58-85f2-66ef0a1b55e3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Storage\Header">
+      <UniqueIdentifier>{fc893b06-34a4-4d05-ac2b-6f1eb61c09b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Storage\Source">
+      <UniqueIdentifier>{59258fea-e953-44f2-bdf5-75633dfafb3d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\LogDef.cpp">
@@ -36,7 +42,10 @@
     <ClCompile Include="Test.cpp">
       <Filter>Test</Filter>
     </ClCompile>
-    <ClCompile Include="source\HashGeneratorDef.cpp">
+    <ClCompile Include="source\HashContainerDef.cpp">
+      <Filter>Primed\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\PrimeNumberConvertDef.cpp">
       <Filter>Primed\Source</Filter>
     </ClCompile>
   </ItemGroup>
@@ -47,8 +56,23 @@
     <ClInclude Include="header\ClassInfor.h">
       <Filter>Infor\Header</Filter>
     </ClInclude>
-    <ClInclude Include="HashGenerator.h">
+    <ClInclude Include="header\HashContainer.h">
       <Filter>Primed\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\PrimeNumberConvert.h">
+      <Filter>Primed\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\Column.h">
+      <Filter>Storage\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\Columns.h">
+      <Filter>Storage\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\Table.h">
+      <Filter>Storage\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\Schema.h">
+      <Filter>Storage\Header</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
