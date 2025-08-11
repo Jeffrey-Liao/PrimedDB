@@ -48,6 +48,9 @@
     <ClCompile Include="source\PrimeNumberConvertDef.cpp">
       <Filter>Primed\Source</Filter>
     </ClCompile>
+    <ClCompile Include="Memory.cpp">
+      <Filter>Storage\Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="header\Log.h">
@@ -72,6 +75,9 @@
       <Filter>Storage\Header</Filter>
     </ClInclude>
     <ClInclude Include="header\Schema.h">
+      <Filter>Storage\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="Memory.h">
       <Filter>Storage\Header</Filter>
     </ClInclude>
   </ItemGroup>

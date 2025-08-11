@@ -8,7 +8,5 @@ namespace liao::db
 		std::string name;
 		std::vector<Column*> columns;
 		User& owner;
-
-		
 	};
 }

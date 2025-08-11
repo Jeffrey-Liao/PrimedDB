@@ -144,6 +144,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Memory.cpp" />
     <ClCompile Include="source\ClassInforDef.cpp" />
     <ClCompile Include="source\HashContainerDef.cpp" />
     <ClCompile Include="source\LogDef.cpp" />
@@ -159,6 +160,7 @@
     <ClInclude Include="header\PrimeNumberConvert.h" />
     <ClInclude Include="header\Schema.h" />
     <ClInclude Include="header\Table.h" />
+    <ClInclude Include="Memory.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

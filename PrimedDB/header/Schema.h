@@ -6,7 +6,8 @@ namespace liao::db
 	{
 		std::vector<Table> tables;
 		std::string name;
+		Columns columns;
 	public:
 
-	}
+	};
 }

@@ -1,5 +1,5 @@
 #include <PrimeNumberConvert.h>
-namespace liao::primed::prime
+namespace liao::PrimedDB::math
 {
 	unsigned int PrimeNumberConvert::generate(unsigned int number, unsigned int digits)
 	{
