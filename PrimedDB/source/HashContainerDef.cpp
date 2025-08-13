@@ -1,57 +1,94 @@
 #include <HashContainer.h>
-using namespace CryptoPP;
-using namespace std;
-namespace liao::PrimedDB::math
+USECRPT;
+USESTD;
+namespace liao::Math
 {
-	void HashContainer::generate(std::string&& message)
+	
+	void HashContainer::hashBySHA256(const std::string& message)
 	{
-		generate(message);
+		SHA256 hashObject;
+		hash(hashObject,message);
 	}
-	void HashContainer::generate(std::string& message)
+	void HashContainer::hashBySHA512(const std::string& message)
 	{
-		SHA256 hash;
-		hash.Update((const CryptoPP::byte*)message.data(), message.size());
-		lock_guard<mutex> guard(m_mutex);
-		hash.Final(this->m_hashByte);
-		m_hashHex.clear();
-		HexEncoder encoder(new StringSink(m_hashHex));
-		encoder.Put(m_hashByte, sizeof(m_hashByte));
-		encoder.MessageEnd();
+		SHA512 hashObject;
+		hash(hashObject, message);
+	}
+	void HashContainer::hashBySHA3_256(const std::string& message)
+	{
+		SHA3_256 hashObject;
+		hash(hashObject, message);
+	}
+	void HashContainer::hashBySHA3_512(const std::string& message)
+	{
+		SHA3_512 hashObject;
+		hash(hashObject, message);
+	}
+	void HashContainer::hashByMD5(const std::string& message)
+	{
+		MD5 hashObject;
+		hash(hashObject, message);
+	}
+	void HashContainer::generate(std::string&& message, HashType type)
+	{
+		generate(message,type);
+	}
+	void HashContainer::generate(const std::string& message, HashType type)
+	{
+		WriteLock guard(m_mutex);
+		if (type == HashType::MD5)
+		{
+			hashByMD5(message);
+		}
+		else
+		{
+			hashBySHA256(message);
+		}
 		m_containsHash = true;//
-		m_hashNumebrs.clear();
+		m_hashNumbers.clear();
 		for (int n = 0; n < LENGTH; n += 4)
 		{
-			m_hashNumebrs.push_back(*(m_hashByte + n));
+			m_hashNumbers.push_back(*(m_hashByte + n));
 		}
-
 	}
 	HashContainer::HashContainer()
-		:m_containsHash(false), m_hashByte{}, m_hashNumebrs(8)
+		:m_containsHash(false), m_hashByte{}, m_hashNumbers(8)
 	{
-		m_hashNumebrs.reserve(256);
+		m_hashNumbers.reserve(LENGTH);
 	}
-	HashContainer::HashContainer(std::string& message)
+	HashContainer::HashContainer(const std::string& message)
 	{
 		generate(message);
+	}
+	HashContainer::HashContainer(const HashContainer& obj)
+		:m_containsHash(obj.m_containsHash),m_hashHex(obj.m_hashHex),m_hashNumbers(obj.m_hashNumbers)
+
+	{
+		memcpy(m_hashByte, obj.m_hashByte,LENGTH);
+	}
+	HashContainer::HashContainer(HashContainer&& move) noexcept
+		:m_containsHash(move.m_containsHash),m_hashHex(std::move(move.m_hashHex)),m_hashNumbers(std::move(move.m_hashNumbers))
+	{
+		memcpy(m_hashByte, move.m_hashByte, LENGTH);
 	}
 	bool HashContainer::contains() const
 	{
-		lock_guard<std::mutex> lock(m_mutex);
+		ReadLock lock(m_mutex);
 		return m_containsHash;
 	}
 	const vector<unsigned int>& HashContainer::getHashNumbers() const
 	{
-		lock_guard<std::mutex> lock(m_mutex);
-		return m_hashNumebrs;
+		ReadLock lock(m_mutex);
+		return m_hashNumbers;
 	}
 	const CryptoPP::byte* HashContainer::getHashByte() const
 	{
-		lock_guard<std::mutex> lock(m_mutex);
+		ReadLock lock(m_mutex);
 		return m_hashByte;
 	}
 	const std::string& HashContainer::getHashHex() const
 	{
-		lock_guard<std::mutex> lock(m_mutex);
+		ReadLock lock(m_mutex);
 		return m_hashHex;
 	}
 }

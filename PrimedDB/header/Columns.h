@@ -1,14 +1,10 @@
 #pragma once
-#include<vector>
-#include<Log.h>
-#include<Column.h>
-#include<mutex>
-#include<unordered_map>
-namespace liao::db
+#include "Column.h"
+namespace liao::PrimedDB
 {
 	class Columns {
 		std::unordered_map<std::string,Column*> m_allColumns;
-		std::mutex m_mutex;
+		std::shared_mutex m_mutex;
 	private:
 		void clear();
 	public:

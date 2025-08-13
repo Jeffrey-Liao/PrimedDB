@@ -12,7 +12,7 @@
 #define THISFUNC __PRETTY_FUNCTION__
 #endif
 
-namespace liao::message
+namespace liao::Infor
 {
 	using std::string;
 	using std::to_string;

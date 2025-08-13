@@ -4,7 +4,7 @@
 #include <ctime>
 #include <sstream>
 using namespace std;
-namespace liao::message
+namespace liao::Infor
 {
 	Log Log::Logger;
 	mutex Log::LogMutex;	

@@ -1,7 +1,7 @@
 #include "ClassInfor.h"
 #include <mutex>
 #include <memory>
-namespace liao::message
+namespace liao::Infor
 {
 	namespace fs = std::filesystem;
 	constexpr const char* LOG_FOLDER = "logFiles";

@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <gmpxx.h>
-namespace liao::PrimedDB::math
+namespace liao::Math
 {
 	using GmpBigNumber = mpz_class;
 	class PrimeNumberConvert {

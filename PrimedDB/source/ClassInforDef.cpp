@@ -1,7 +1,7 @@
 #include <ClassInfor.h>
 #include <format>
 ACTIVE_STD;
-namespace liao::message
+namespace liao::Infor
 {
 	string ClassInfor::raw2FunctionName(string& functionSig)
 	{

@@ -31,6 +31,15 @@
     <Filter Include="Storage\Source">
       <UniqueIdentifier>{59258fea-e953-44f2-bdf5-75633dfafb3d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Util">
+      <UniqueIdentifier>{f05e7839-c795-4597-a4ce-e5c674750889}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Util\header">
+      <UniqueIdentifier>{52b8e792-d4a0-4e44-bd62-86339f0dd548}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Util\source">
+      <UniqueIdentifier>{2d08dbc7-c074-4ffa-99bd-0941e04314ec}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\LogDef.cpp">
@@ -50,6 +59,18 @@
     </ClCompile>
     <ClCompile Include="Memory.cpp">
       <Filter>Storage\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Inactive.cpp">
+      <Filter>Test</Filter>
+    </ClCompile>
+    <ClCompile Include="source\ColumnDef.cpp">
+      <Filter>Storage\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\GlobalDef.cpp">
+      <Filter>Storage\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\TimeStampDef.cpp">
+      <Filter>Util\source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -79,6 +100,21 @@
     </ClInclude>
     <ClInclude Include="Memory.h">
       <Filter>Storage\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="LiaoException.h">
+      <Filter>Storage\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\Global.h">
+      <Filter>Storage\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\User.h">
+      <Filter>Storage\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\TimeStamp.h">
+      <Filter>Util\header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\Defs.h">
+      <Filter>Util\header</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
