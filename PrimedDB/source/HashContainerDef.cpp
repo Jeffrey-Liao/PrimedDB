@@ -3,7 +3,32 @@ USECRPT;
 USESTD;
 namespace liao::Math
 {
-	
+	void HashContainer::convertByteToString()
+	{
+		m_hashHex.clear();
+		CryptoPP::HexEncoder encoder(new CryptoPP::StringSink(m_hashHex));
+		encoder.Put(m_hashByte, LENGTH);
+		encoder.MessageEnd();
+	}
+	int HashContainer::GetByteSize(HashType type)
+	{
+		if (type == HashType::MD5)
+			return MD5::DIGESTSIZE;
+		else if (type == HashType::SHA3_512)
+		{
+			return SHA3_512::DIGESTSIZE;
+		}
+		else if (type == HashType::SHA512)
+		{
+			return SHA512::DIGESTSIZE;
+		}
+		else if (type == HashType::SHA3_256)
+		{
+			return SHA3_256::DIGESTSIZE;
+		}
+		else
+			return SHA256::DIGESTSIZE;
+	}
 	void HashContainer::hashBySHA256(const std::string& message)
 	{
 		SHA256 hashObject;
@@ -40,6 +65,18 @@ namespace liao::Math
 		{
 			hashByMD5(message);
 		}
+		else if (type == HashType::SHA512)
+		{
+			hashBySHA512(message);
+		}
+		else if (type == HashType::SHA3_256)
+		{
+			hashBySHA3_256(message);
+		}
+		else if (type == HashType::SHA3_512)
+		{
+			hashBySHA3_512(message);
+		}
 		else
 		{
 			hashBySHA256(message);
@@ -74,7 +111,7 @@ namespace liao::Math
 	bool HashContainer::contains() const
 	{
 		ReadLock lock(m_mutex);
-		return m_containsHash;
+		return m_containsHash&&!m_hashHex.empty();
 	}
 	const vector<unsigned int>& HashContainer::getHashNumbers() const
 	{
@@ -90,5 +127,9 @@ namespace liao::Math
 	{
 		ReadLock lock(m_mutex);
 		return m_hashHex;
+	}
+	std::string&& HashContainer::moveHashHex()
+	{
+		return std::move(m_hashHex);
 	}
 }

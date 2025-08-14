@@ -5,7 +5,7 @@ namespace liao
 {
 	namespace PrimedDB
 	{
-		enum DataType :char
+		enum class DataType :char
 		{
 			Int,
 			Varchar,
@@ -14,14 +14,15 @@ namespace liao
 			Time,
 			Date
 		};
-		enum ColumnType :char
+		enum class ColumnType :char
 		{
 			Primary,
 			Foreign,
 			Normal
 		};
-		enum UserLevel :char
+		enum class UserLevel :char
 		{
+			None,
 			Visitor,
 			SuperVisitor,
 			User,
@@ -31,7 +32,7 @@ namespace liao
 			Administrator
 		};
 	}
-	enum ErrorCode :char
+	enum class ErrorCode :char
 	{
 		Nothing,
 
@@ -54,6 +55,7 @@ namespace liao
 			return dis(gen);
 		}
 		static std::string GetUniqueId(Math::HashType type = Math::HashType::SHA256);
+		static void Split(std::vector<std::string>& out, const std::string& s, char delimiter);
 	};
 
 }

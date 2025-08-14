@@ -1,5 +1,5 @@
 #include "Global.h"
-
+#include <sstream>
 #include <random>
 USESTD;
 USECRPT;
@@ -11,5 +11,13 @@ namespace liao {
 		Math::HashContainer container;
 		container.generate(timeStamp.getString() + to_string(random),type);
 		return container.getHashHex();
+	}
+	static void Split(vector<string>& out,const string& s, char delimiter)
+	{
+		string token;
+		istringstream tokenStream(s);
+		while (getline(tokenStream, token, delimiter)) {
+			out.push_back(token);
+		}
 	}
 }

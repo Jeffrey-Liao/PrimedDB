@@ -15,17 +15,18 @@ namespace liao::PrimedDB
         Table& operator=(const Table&) = delete;
         Table(Table&&) = delete;
 	public:
-		Table(std::string name, User& owner);
+		Table(const std::string& name, User& owner);
 		std::string getName() const;
-        void addColumn(std::string name, short int byteSize);
-        void rename(std::string name);
-        void removeColumn(std::string name);
-        void resizeColumn(std::string name, short int byteSize);
-        Column& getColumn(std::string name) const;
+        void addColumn(const std::string& name, short int byteSize);
+        void rename(const std::string& name);
+        void removeColumn(const std::string& name);
+        void resizeColumn(const std::string& name, short int byteSize);
+        Column& getColumn(const std::string& name) const;
         std::vector<Column*> getColumns() const;
         int getRecordNumber() const;
         void increaseRecordNumber();
 		User& getOwner() const;
 		~Table();
+		static Table NullRef;
 	};
 }

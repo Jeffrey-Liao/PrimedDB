@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <memory>
 #include <unordered_map>
 #include <thread>
@@ -10,7 +11,8 @@
 #include <mutex>
 #include <shared_mutex>
 #include <utility>
-#include <format> 
+#include <format>
+#include <fstream>
 #include "sha.h"
 #define DYNAMIC template<class T>
 #define USESTD using namespace std

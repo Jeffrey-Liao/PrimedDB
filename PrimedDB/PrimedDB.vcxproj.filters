@@ -72,6 +72,9 @@
     <ClCompile Include="source\TimeStampDef.cpp">
       <Filter>Util\source</Filter>
     </ClCompile>
+    <ClCompile Include="source\UserDef.cpp">
+      <Filter>Storage\Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="header\Log.h">

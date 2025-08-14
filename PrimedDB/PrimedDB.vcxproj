@@ -153,6 +153,7 @@
     <ClCompile Include="source\LogDef.cpp" />
     <ClCompile Include="source\PrimeNumberConvertDef.cpp" />
     <ClCompile Include="source\TimeStampDef.cpp" />
+    <ClCompile Include="source\UserDef.cpp" />
     <ClCompile Include="Test.cpp" />
   </ItemGroup>
   <ItemGroup>

@@ -33,16 +33,14 @@ namespace liao::Math
 		std::string m_hashHex;
 		std::vector<unsigned int> m_hashNumbers;
 
+
 		DYNAMICCON(HashTypeName)
 		void hash(T& hash, const std::string& message)
 		{
 			LENGTH = T::DIGESTSIZE;
 			hash.Update((const CryptoPP::byte*)message.data(), message.size());
 			hash.Final(this->m_hashByte);
-			m_hashHex.clear();
-			CryptoPP::HexEncoder encoder(new CryptoPP::StringSink(m_hashHex));
-			encoder.Put(m_hashByte, LENGTH);
-			encoder.MessageEnd();
+			convertByteToString();
 		}
 
 		void hashByMD5(const std::string& message);
@@ -51,7 +49,8 @@ namespace liao::Math
 		void hashBySHA3_256(const std::string& message);
 		void hashBySHA3_512(const std::string& message);
 	public:
-		
+		void convertByteToString();
+		static int GetByteSize(HashType);
 		void generate(std::string&& message, HashType type = HashType::SHA256);
 		void generate(const std::string& message, HashType type = HashType::SHA256);
 		HashContainer();
@@ -62,5 +61,6 @@ namespace liao::Math
 		const std::vector<unsigned int>& getHashNumbers() const;
 		const CryptoPP::byte* getHashByte() const;
 		const std::string& getHashHex() const;
+		std::string&& moveHashHex();
 	};
 }
