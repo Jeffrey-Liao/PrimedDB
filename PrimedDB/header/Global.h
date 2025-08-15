@@ -5,6 +5,10 @@ namespace liao
 {
 	namespace PrimedDB
 	{
+		class Table;
+		class User;
+		class Column;
+
 		enum class DataType :char
 		{
 			Int,
@@ -59,5 +63,41 @@ namespace liao
 	{
 	public:
 		static Math::HashType UserIDHashType;
+		static std::string UserInforFile;
+	};
+
+
+	DYNAMIC
+	concept Concept_NullRefField = requires(T obj)
+	{
+		std::same_as<T,PrimedDB::Column>
+		|| std::same_as<T, PrimedDB::User>
+		|| std::same_as<T, PrimedDB::Table>;
+	};
+
+	DYNAMICCON(Concept_NullRefField)
+	class NullRefProvider
+	{
+	public:
+		static T NullRef;
+		static bool isNullObject(const T& obj)
+		{
+			return obj.getId() == "null";
+		}
+	};
+	DYNAMIC
+	concept Concept_Singleton = !std::is_default_constructible_v<T> &&
+		!std::is_copy_constructible_v<T> &&
+		!std::is_move_constructible_v<T>;
+	DYNAMICCON(Concept_Singleton)
+	class Singleton
+	{
+		static T instance;
+		ShareMutex m_mutex;
+	public:
+		T& getInstance()
+		{
+			return instance;
+		}
 	};
 }

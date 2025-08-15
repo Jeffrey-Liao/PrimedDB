@@ -5,22 +5,9 @@ USESTD;
 USELIAOMATH;
 namespace liao::PrimedDB
 {
-	User User::NullRef("null","null","null", UserLevel::None);
-	bool User::isNullObject(const User& object)
-	{
-		return object.getId() == NullRef.getId();
-	}
-	User::User(std::string m_id, std::string m_name,
-		std::string m_password,
-		UserLevel m_level)
-			:m_id(m_id),m_name(m_name),m_password(m_password),m_level(m_level)
-	{}
 	User::User()
-		:m_name(), m_password(), m_level(UserLevel::None), m_id(StaticFunc::GetUniqueId(Configuration::UserIDHashType)), m_tables()
-	{
-		m_password.reserve(Math::HashContainer::GetByteSize(Configuration::UserIDHashType));
-		m_tables.reserve(5);
-	}
+		:m_name("null"), m_password("null"), m_level(UserLevel::None), m_id("null")
+	{}
 	void User::linkTables(const vector<string>& line)
 	{
 		WriteLock lock(m_mutex);
@@ -56,19 +43,17 @@ namespace liao::PrimedDB
 			m_name = userInfor[n++];
 			m_password = userInfor[n++];
 			m_level = static_cast<UserLevel>(stoi(userInfor[n]));
-			
 			linkTables(userInfor);
 		}
 	}
 	User::User(string& name, string& password, UserLevel level)
-		:m_name(move(name)), m_password(move(password)), m_level(level),m_id(StaticFunc::GetUniqueId(Configuration::UserIDHashType))
+		:m_name(std::move(name)), m_password(std::move(password)), m_level(level),m_id(StaticFunc::GetUniqueId(Configuration::UserIDHashType))
 	{
 		m_tables.reserve(5);
 	}
 	User::User(User&& object) noexcept
-		:m_name(move(object.m_name)), m_password(move(object.m_password)), m_level(object.m_level), m_id(move(object.m_id)),m_tables(move(object.m_tables))
+		:m_name(std::move(object.m_name)), m_password(std::move(object.m_password)), m_level(object.m_level), m_id(std::move(object.m_id)),m_tables(std::move(object.m_tables))
 	{
-
 	}
 	User::~User()
 	{
@@ -185,20 +170,16 @@ namespace liao::PrimedDB
 		m_level = level;
 	}
 
-	void User::save(const string& fileName)
-	{
-		ofstream file(fileName,ios::out|ios::app);
-		file << toString() << endl;
-		file.close();
-	}
-	const string User::toString() const
+	string User::toString() const
 	{
 		std::ostringstream oss;
-		WriteLock lock(m_mutex);
+		ReadLock lock(m_mutex);
 		oss << format("{},{},{},{}", m_id, m_name, m_password, static_cast<int>(m_level));
 		for (int n = 0; n < m_tables.size(); ++n)
 		{
 			oss << m_tables[n]->getName();
+			if (n+1<m_tables.size())
+                oss << ',';
 		}
 		return oss.str();
 	}

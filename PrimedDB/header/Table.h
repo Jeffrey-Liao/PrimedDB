@@ -3,12 +3,13 @@
 namespace liao::PrimedDB
 {
 	class User;
-	class Table
+	class Table : public NullRefProvider<Table>
 	{
+		std::string m_id;
 		std::string m_name;
 		std::vector<Column> m_columns;
 		UserLevel m_permission;
-		User& m_owner;
+		const User& m_owner;
 		mutable std::shared_mutex m_mutex;
 		int m_recordNumber;
 	private:
@@ -23,6 +24,8 @@ namespace liao::PrimedDB
 		auto findColumn(const std::string& name);
 		auto findColumn(const std::string& name) const;
 		void clear();
+		int size()const;
+		const std::string& getId() const;
         void addColumn(std::string& name, short int byteSize);
 		void dropColumn(const std::string& name);
         void rename(std::string& name);
@@ -32,9 +35,8 @@ namespace liao::PrimedDB
         const std::vector<Column>& getColumns() const;
         int getRecordNumber() const;
         void increaseRecordNumber();
-		User& getOwner() const;
+		const User& getOwner() const;
+		std::string toString() const;
 		~Table();
-		static Table NullRef;
-		static bool isNullObject(const Table&);
 	};
 }

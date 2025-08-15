@@ -4,7 +4,7 @@
 #include <ranges> 
 namespace liao::PrimedDB {
 	class Table;
-	class User
+	class User:public NullRefProvider<User>
 	{
 		mutable ShareMutex m_mutex;
 		std::string m_id;
@@ -15,14 +15,11 @@ namespace liao::PrimedDB {
 
 	private:
 		User(const User&) = delete;
-		User(std::string m_id, std::string m_name,
-			std::string m_password,
-			UserLevel m_level);
 		//unfinished, need to implement TableManager.
 		void linkTables(const std::vector<std::string>&);
 		int findTable(const std::string& name) const;
+		User();
 	public:
-        User();
 		User(const std::string& fileLine);
 		User(std::string& name,std::string& password, UserLevel level);
 		User(User&&) noexcept;
@@ -46,11 +43,7 @@ namespace liao::PrimedDB {
 		void changePassword(const std::string& rawText);
 		void setPassword(std::string& hash);
 		void setLevel(UserLevel level);
-
-		void save(const std::string& fileName);
-		const std::string toString() const;
+		std::string toString() const;
 		Table& operator[](const std::string& name);
-		static User NullRef;
-		static bool isNullObject(const User&);
 	};
 }

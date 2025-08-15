@@ -78,6 +78,9 @@
     <ClCompile Include="source\TableDef.cpp">
       <Filter>Storage\Source</Filter>
     </ClCompile>
+    <ClCompile Include="source\StructFileDef.cpp">
+      <Filter>Util\source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="header\Log.h">
@@ -121,6 +124,12 @@
     </ClInclude>
     <ClInclude Include="header\Defs.h">
       <Filter>Util\header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\StructFile.h">
+      <Filter>Util\header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\UserManger.h">
+      <Filter>Storage\Header</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
