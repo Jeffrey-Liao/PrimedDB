@@ -20,4 +20,6 @@ namespace liao {
 			out.push_back(token);
 		}
 	}
+	Math::HashType Configuration::UserIDHashType = Math::HashType::SHA256;
+	string Configuration::UserInforFile = "users.dat";
 }

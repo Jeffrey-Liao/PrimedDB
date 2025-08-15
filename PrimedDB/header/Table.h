@@ -3,30 +3,40 @@
 namespace liao::PrimedDB
 {
 	class User;
-	class Table
+	class Table : public NullRefProvider<Table>
 	{
+		std::string m_id;
 		std::string m_name;
-		std::vector<Column*> m_columns;
-		User& m_owner;
-		std::shared_mutex m_mutex;
+		std::vector<Column> m_columns;
+		UserLevel m_permission;
+		const User& m_owner;
+		mutable std::shared_mutex m_mutex;
 		int m_recordNumber;
 	private:
-        Table(const Table&) = delete;
-        Table& operator=(const Table&) = delete;
-        Table(Table&&) = delete;
+
+		Table();
 	public:
-		Table(const std::string& name, User& owner);
-		std::string getName() const;
-        void addColumn(const std::string& name, short int byteSize);
-        void rename(const std::string& name);
+		Table(const Table&) = delete;
+		Table& operator=(const Table&) = delete;
+		Table(Table&&) = delete;
+		Table(std::string& name, User& owner, UserLevel permission);
+		const std::string& getName() const;
+		auto findColumn(const std::string& name);
+		auto findColumn(const std::string& name) const;
+		void clear();
+		int size()const;
+		const std::string& getId() const;
+        void addColumn(std::string& name, short int byteSize);
+		void dropColumn(const std::string& name);
+        void rename(std::string& name);
         void removeColumn(const std::string& name);
         void resizeColumn(const std::string& name, short int byteSize);
-        Column& getColumn(const std::string& name) const;
-        std::vector<Column*> getColumns() const;
+        const Column& getColumn(const std::string& name) const;
+        const std::vector<Column>& getColumns() const;
         int getRecordNumber() const;
         void increaseRecordNumber();
-		User& getOwner() const;
+		const User& getOwner() const;
+		std::string toString() const;
 		~Table();
-		static Table NullRef;
 	};
 }

@@ -3,16 +3,14 @@
 #include "Table.h"
 #include <ranges> 
 namespace liao::PrimedDB {
-	static Math::HashType UserIDHashType = Math::HashType::SHA256;
 	class Table;
-	class User
+	class User:public NullRefProvider<User>
 	{
 		mutable ShareMutex m_mutex;
 		std::string m_id;
 		std::string m_name;
 		std::string m_password;
-        UserLevel m_level;
-
+		UserLevel m_level;
 		std::vector<Table*> m_tables;
 
 	private:
@@ -20,8 +18,8 @@ namespace liao::PrimedDB {
 		//unfinished, need to implement TableManager.
 		void linkTables(const std::vector<std::string>&);
 		int findTable(const std::string& name) const;
+		User();
 	public:
-        User();
 		User(const std::string& fileLine);
 		User(std::string& name,std::string& password, UserLevel level);
 		User(User&&) noexcept;
@@ -38,16 +36,14 @@ namespace liao::PrimedDB {
 		int compare(const User& other) const;
 		bool qualified(UserLevel level) const;
 
-		void createTable(const std::string& name);
-		void rename(std::string& name);
+		Table& createTable(std::string& name,UserLevel permission);
+		bool rename(std::string& name);
         void dropTable(const std::string& name);
 		void renameTable(const std::string& name, std::string& newName);
 		void changePassword(const std::string& rawText);
 		void setPassword(std::string& hash);
 		void setLevel(UserLevel level);
-
-		void save(const std::string& fileName);
-		const std::string toString() const;
+		std::string toString() const;
 		Table& operator[](const std::string& name);
 	};
 }

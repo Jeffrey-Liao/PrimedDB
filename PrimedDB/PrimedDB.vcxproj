@@ -152,6 +152,8 @@
     <ClCompile Include="source\HashContainerDef.cpp" />
     <ClCompile Include="source\LogDef.cpp" />
     <ClCompile Include="source\PrimeNumberConvertDef.cpp" />
+    <ClCompile Include="source\StructFileDef.cpp" />
+    <ClCompile Include="source\TableDef.cpp" />
     <ClCompile Include="source\TimeStampDef.cpp" />
     <ClCompile Include="source\UserDef.cpp" />
     <ClCompile Include="Test.cpp" />
@@ -166,9 +168,11 @@
     <ClInclude Include="header\Log.h" />
     <ClInclude Include="header\PrimeNumberConvert.h" />
     <ClInclude Include="header\Schema.h" />
+    <ClInclude Include="header\StructFile.h" />
     <ClInclude Include="header\Table.h" />
     <ClInclude Include="header\TimeStamp.h" />
     <ClInclude Include="header\User.h" />
+    <ClInclude Include="header\UserManger.h" />
     <ClInclude Include="LiaoException.h" />
     <ClInclude Include="Memory.h" />
   </ItemGroup>

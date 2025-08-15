@@ -7,7 +7,7 @@
 namespace liao::Math
 {
 	DYNAMIC
-	concept HashTypeName = requires
+	concept Concept_HashTypeName = requires
 	{
 		std::is_same_v<T, CryptoPP::MD5> ||
 		std::is_same_v<T, CryptoPP::SHA256> ||
@@ -34,7 +34,7 @@ namespace liao::Math
 		std::vector<unsigned int> m_hashNumbers;
 
 
-		DYNAMICCON(HashTypeName)
+		DYNAMICCON(Concept_HashTypeName)
 		void hash(T& hash, const std::string& message)
 		{
 			LENGTH = T::DIGESTSIZE;

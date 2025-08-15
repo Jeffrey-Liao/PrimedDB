@@ -6,11 +6,8 @@ USELIAOMATH;
 namespace liao::PrimedDB
 {
 	User::User()
-		:m_name(), m_password(), m_level(UserLevel::None), m_id(StaticFunc::GetUniqueId(UserIDHashType)), m_tables()
-	{
-		m_password.reserve(Math::HashContainer::GetByteSize(UserIDHashType));
-		m_tables.reserve(5);
-	}
+		:m_name("null"), m_password("null"), m_level(UserLevel::None), m_id("null")
+	{}
 	void User::linkTables(const vector<string>& line)
 	{
 		WriteLock lock(m_mutex);
@@ -46,27 +43,25 @@ namespace liao::PrimedDB
 			m_name = userInfor[n++];
 			m_password = userInfor[n++];
 			m_level = static_cast<UserLevel>(stoi(userInfor[n]));
-			
 			linkTables(userInfor);
 		}
 	}
 	User::User(string& name, string& password, UserLevel level)
-		:m_name(move(name)), m_password(move(password)), m_level(level),m_id(StaticFunc::GetUniqueId(UserIDHashType))
+		:m_name(std::move(name)), m_password(std::move(password)), m_level(level),m_id(StaticFunc::GetUniqueId(Configuration::UserIDHashType))
 	{
 		m_tables.reserve(5);
 	}
 	User::User(User&& object) noexcept
-		:m_name(move(object.m_name)), m_password(move(object.m_password)), m_level(object.m_level), m_id(move(object.m_id)),m_tables(move(object.m_tables))
+		:m_name(std::move(object.m_name)), m_password(std::move(object.m_password)), m_level(object.m_level), m_id(std::move(object.m_id)),m_tables(std::move(object.m_tables))
 	{
-
 	}
 	User::~User()
 	{
 		if (!m_tables.empty())
 		{
-			for (Table* v : m_tables)
+			for (int n = 0; n < m_tables.size(); ++n)
 			{
-				delete v;
+				delete m_tables[n];
 			}
 		}
 		m_tables.clear();
@@ -130,15 +125,19 @@ namespace liao::PrimedDB
 		return m_level >= level;
 	}
 
-	void User::createTable(const string& name)
+	Table& User::createTable(string& name, UserLevel permission)
 	{
 		WriteLock lock(m_mutex);
-		m_tables.push_back(new Table(name, *this));
+		m_tables.push_back(new Table(name, *this,permission));
+		return *(m_tables[m_tables.size()]);
 	}
-	void User::rename(string& name)
+	bool User::rename(string& name)
 	{
 		WriteLock lock(m_mutex);
+		if (name == "null")
+			return false;
 		m_name = std::move(name);
+		return true;
 	}
 	void User::dropTable(const string& name)
 	{
@@ -171,20 +170,16 @@ namespace liao::PrimedDB
 		m_level = level;
 	}
 
-	void User::save(const string& fileName)
-	{
-		ofstream file(fileName,ios::out|ios::app);
-		file << toString() << endl;
-		file.close();
-	}
-	const string User::toString() const
+	string User::toString() const
 	{
 		std::ostringstream oss;
-		WriteLock lock(m_mutex);
+		ReadLock lock(m_mutex);
 		oss << format("{},{},{},{}", m_id, m_name, m_password, static_cast<int>(m_level));
 		for (int n = 0; n < m_tables.size(); ++n)
 		{
 			oss << m_tables[n]->getName();
+			if (n+1<m_tables.size())
+                oss << ',';
 		}
 		return oss.str();
 	}
