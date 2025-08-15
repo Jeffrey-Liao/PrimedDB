@@ -5,10 +5,20 @@ USESTD;
 USELIAOMATH;
 namespace liao::PrimedDB
 {
-	User::User()
-		:m_name(), m_password(), m_level(UserLevel::None), m_id(StaticFunc::GetUniqueId(UserIDHashType)), m_tables()
+	User User::NullRef("null","null","null", UserLevel::None);
+	bool User::isNullObject(const User& object)
 	{
-		m_password.reserve(Math::HashContainer::GetByteSize(UserIDHashType));
+		return object.getId() == NullRef.getId();
+	}
+	User::User(std::string m_id, std::string m_name,
+		std::string m_password,
+		UserLevel m_level)
+			:m_id(m_id),m_name(m_name),m_password(m_password),m_level(m_level)
+	{}
+	User::User()
+		:m_name(), m_password(), m_level(UserLevel::None), m_id(StaticFunc::GetUniqueId(Configuration::UserIDHashType)), m_tables()
+	{
+		m_password.reserve(Math::HashContainer::GetByteSize(Configuration::UserIDHashType));
 		m_tables.reserve(5);
 	}
 	void User::linkTables(const vector<string>& line)
@@ -51,7 +61,7 @@ namespace liao::PrimedDB
 		}
 	}
 	User::User(string& name, string& password, UserLevel level)
-		:m_name(move(name)), m_password(move(password)), m_level(level),m_id(StaticFunc::GetUniqueId(UserIDHashType))
+		:m_name(move(name)), m_password(move(password)), m_level(level),m_id(StaticFunc::GetUniqueId(Configuration::UserIDHashType))
 	{
 		m_tables.reserve(5);
 	}
@@ -64,9 +74,9 @@ namespace liao::PrimedDB
 	{
 		if (!m_tables.empty())
 		{
-			for (Table* v : m_tables)
+			for (int n = 0; n < m_tables.size(); ++n)
 			{
-				delete v;
+				delete m_tables[n];
 			}
 		}
 		m_tables.clear();
@@ -130,15 +140,19 @@ namespace liao::PrimedDB
 		return m_level >= level;
 	}
 
-	void User::createTable(const string& name)
+	Table& User::createTable(string& name, UserLevel permission)
 	{
 		WriteLock lock(m_mutex);
-		m_tables.push_back(new Table(name, *this));
+		m_tables.push_back(new Table(name, *this,permission));
+		return *(m_tables[m_tables.size()]);
 	}
-	void User::rename(string& name)
+	bool User::rename(string& name)
 	{
 		WriteLock lock(m_mutex);
+		if (name == "null")
+			return false;
 		m_name = std::move(name);
+		return true;
 	}
 	void User::dropTable(const string& name)
 	{

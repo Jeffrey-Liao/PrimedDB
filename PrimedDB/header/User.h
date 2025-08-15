@@ -3,7 +3,6 @@
 #include "Table.h"
 #include <ranges> 
 namespace liao::PrimedDB {
-	static Math::HashType UserIDHashType = Math::HashType::SHA256;
 	class Table;
 	class User
 	{
@@ -11,12 +10,14 @@ namespace liao::PrimedDB {
 		std::string m_id;
 		std::string m_name;
 		std::string m_password;
-        UserLevel m_level;
-
+		UserLevel m_level;
 		std::vector<Table*> m_tables;
 
 	private:
 		User(const User&) = delete;
+		User(std::string m_id, std::string m_name,
+			std::string m_password,
+			UserLevel m_level);
 		//unfinished, need to implement TableManager.
 		void linkTables(const std::vector<std::string>&);
 		int findTable(const std::string& name) const;
@@ -38,8 +39,8 @@ namespace liao::PrimedDB {
 		int compare(const User& other) const;
 		bool qualified(UserLevel level) const;
 
-		void createTable(const std::string& name);
-		void rename(std::string& name);
+		Table& createTable(std::string& name,UserLevel permission);
+		bool rename(std::string& name);
         void dropTable(const std::string& name);
 		void renameTable(const std::string& name, std::string& newName);
 		void changePassword(const std::string& rawText);
@@ -49,5 +50,7 @@ namespace liao::PrimedDB {
 		void save(const std::string& fileName);
 		const std::string toString() const;
 		Table& operator[](const std::string& name);
+		static User NullRef;
+		static bool isNullObject(const User&);
 	};
 }

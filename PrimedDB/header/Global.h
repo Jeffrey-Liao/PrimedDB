@@ -35,10 +35,8 @@ namespace liao
 	enum class ErrorCode :char
 	{
 		Nothing,
-
 	};
 
-	static int userIdGenSeed = 0;
 	DYNAMIC
 	concept Numeric = std::integral<T> || std::floating_point<T>;
 
@@ -57,5 +55,9 @@ namespace liao
 		static std::string GetUniqueId(Math::HashType type = Math::HashType::SHA256);
 		static void Split(std::vector<std::string>& out, const std::string& s, char delimiter);
 	};
-
+	class Configuration
+	{
+	public:
+		static Math::HashType UserIDHashType;
+	};
 }

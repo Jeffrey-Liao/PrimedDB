@@ -75,6 +75,9 @@
     <ClCompile Include="source\UserDef.cpp">
       <Filter>Storage\Source</Filter>
     </ClCompile>
+    <ClCompile Include="source\TableDef.cpp">
+      <Filter>Storage\Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="header\Log.h">
