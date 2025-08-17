@@ -75,16 +75,22 @@ namespace liao
 		|| std::same_as<T, PrimedDB::Table>;
 	};
 
-	DYNAMICCON(Concept_NullRefField)
+	template<Concept_NullRefField T>
 	class NullRefProvider
 	{
+		static T nullRef;
 	public:
-		static T NullRef;
+		static T& GetNullRef()
+		{
+			return nullRef;
+		}
 		static bool isNullObject(const T& obj)
 		{
 			return obj.getId() == "null";
 		}
 	};
+	template<Concept_NullRefField T>
+	T NullRefProvider<T>::nullRef;
 	DYNAMIC
 	concept Concept_Singleton = !std::is_default_constructible_v<T> &&
 		!std::is_copy_constructible_v<T> &&

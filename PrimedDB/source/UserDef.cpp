@@ -47,8 +47,9 @@ namespace liao::PrimedDB
 		}
 	}
 	User::User(string& name, string& password, UserLevel level)
-		:m_name(std::move(name)), m_password(std::move(password)), m_level(level),m_id(StaticFunc::GetUniqueId(Configuration::UserIDHashType))
+		:m_name(std::move(name)), m_level(level),m_id(StaticFunc::GetUniqueId(Configuration::UserIDHashType))
 	{
+		changePassword(password);
 		m_tables.reserve(5);
 	}
 	User::User(User&& object) noexcept
@@ -100,12 +101,17 @@ namespace liao::PrimedDB
 			ReadLock lock(m_mutex);
 			return *m_tables[index];
 		}
-		return Table::NullRef;
+		return Table::GetNullRef();
 	}
 	const Table& User::getTable(const string& name) const
 	{
-		ReadLock lock(m_mutex);
-		return getTable(name);
+		int index = findTable(name);
+		if (index != -1)
+		{
+			ReadLock lock(m_mutex);
+			return *m_tables[index];
+		}
+		return Table::GetNullRef();
 	}
 	int User::tableCount() const
 	{
@@ -127,9 +133,16 @@ namespace liao::PrimedDB
 
 	Table& User::createTable(string& name, UserLevel permission)
 	{
+		{
+			ReadLock lock(m_mutex);
+			if (findTable(name) != -1||name == "")
+			{
+				return Table::GetNullRef();
+			}
+		}
 		WriteLock lock(m_mutex);
 		m_tables.push_back(new Table(name, *this,permission));
-		return *(m_tables[m_tables.size()]);
+		return *(m_tables[m_tables.size()-1]);
 	}
 	bool User::rename(string& name)
 	{
@@ -144,7 +157,7 @@ namespace liao::PrimedDB
 		int index = findTable(name);
 		WriteLock lock(m_mutex);
 		delete m_tables[index];
-		remove(m_tables.begin(), m_tables.end(), index);
+		m_tables.erase(m_tables.begin() + index);
 	}
 	void User::renameTable(const string&  name, string&  newName)
 	{
@@ -154,15 +167,23 @@ namespace liao::PrimedDB
 	}
 	void User::changePassword(const string& rawText)
 	{
-		HashContainer container;
-		container.generate(rawText);
 		WriteLock lock(m_mutex);
-		m_password = container.moveHashHex();
+		m_password = PassWordHash(rawText);
 	}
 	void User::setPassword(string&  hash)
 	{
 		WriteLock lock(m_mutex);
 		m_password = std::move(hash);
+	}
+	std::string User::PassWordHash(const std::string& rawText)
+	{
+		HashContainer container;
+		container.generate(rawText);
+		return container.moveHashHex();
+	}
+	bool User::validate(const std::string& password) const
+	{
+		return m_password == password;
 	}
 	void User::setLevel(UserLevel level)
 	{
@@ -177,14 +198,23 @@ namespace liao::PrimedDB
 		oss << format("{},{},{},{}", m_id, m_name, m_password, static_cast<int>(m_level));
 		for (int n = 0; n < m_tables.size(); ++n)
 		{
+			if (n + 1 <= m_tables.size())
+				oss << ',';
 			oss << m_tables[n]->getName();
-			if (n+1<m_tables.size())
-                oss << ',';
 		}
 		return oss.str();
 	}
 	Table& User::operator[](const string&  name)
 	{
 		return getTable(name);
+	}
+	User& User::operator=(User& user)
+	{
+		m_id = user.m_id;
+        m_level = user.m_level;
+        m_name = user.m_name;
+        m_password = user.m_password;
+		m_tables = user.m_tables;
+		return *this;
 	}
 }

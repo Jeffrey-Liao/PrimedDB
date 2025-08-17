@@ -18,8 +18,9 @@ namespace liao::PrimedDB {
 		//unfinished, need to implement TableManager.
 		void linkTables(const std::vector<std::string>&);
 		int findTable(const std::string& name) const;
-		User();
+
 	public:
+		User();
 		User(const std::string& fileLine);
 		User(std::string& name,std::string& password, UserLevel level);
 		User(User&&) noexcept;
@@ -35,7 +36,8 @@ namespace liao::PrimedDB {
 		//1 GREATER, 0 EQUAL, -1 LESS
 		int compare(const User& other) const;
 		bool qualified(UserLevel level) const;
-
+		bool validate(const std::string& password) const;
+		static std::string PassWordHash(const std::string& rawText);
 		Table& createTable(std::string& name,UserLevel permission);
 		bool rename(std::string& name);
         void dropTable(const std::string& name);
@@ -45,5 +47,6 @@ namespace liao::PrimedDB {
 		void setLevel(UserLevel level);
 		std::string toString() const;
 		Table& operator[](const std::string& name);
+		User& operator=(User&);
 	};
 }

@@ -1,8 +1,10 @@
 #include "Global.h"
+#include "User.h"
 #include <iostream>
 USELIAO;
 USESTD;
 USELIAOMATH;
+USELIAOPRIMED;
 static Mutex mutexMain;
 void genId()
 {
@@ -12,8 +14,18 @@ void genId()
 }
 int main()
 {
-    thread t1(genId);
-    thread t2(genId);
-    t1.join();
-    t2.join();
+    string name = "liao", password = "654321";
+    User user(name,password,UserLevel::Administrator);
+    user.changePassword("123456");
+    password = "123456";
+    password = User::PassWordHash(password);
+    cout<< user.validate(password) << "\n";
+    name = "test";
+
+    cout<< user.createTable(name, user.getLevel()).toString()<<endl;
+    name = "hello";
+    cout << user.createTable(name, user.getLevel()).toString()<<endl;
+    name = "world";
+    cout << user.createTable(name, user.getLevel()).toString() << endl;
+    cout<<user.toString() << "\n";
 }

@@ -8,15 +8,17 @@ namespace liao::PrimedDB
 	{
 		std::string m_columnName;
 		short int m_byteSize;
-		const Table& m_owner;
+		Table& m_owner;
 		mutable std::shared_mutex m_mutex;
+		ColumnType m_type;
+		Column* ref;
 		std::string m_id;
-
-		Column();
 	public:
+		Column();
 		Column(std::string& name, short int size, Table& owner);
 		Column(const std::string&,Table&);
 		Column(const Column&);
+		Column(Column&&) noexcept;
 		void rename(std::string&);
 		void resize(short int);
 		const std::string& getName() const;
@@ -24,6 +26,7 @@ namespace liao::PrimedDB
         const Table& getOwner() const;
 		const std::string& getId() const;
 		std::string toString() const;
+		Column& operator=(const Column&);
         ~Column() = default;
 	};
 }
