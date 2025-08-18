@@ -48,5 +48,6 @@ namespace liao::PrimedDB {
 		std::string toString() const;
 		Table& operator[](const std::string& name);
 		User& operator=(User&);
+		bool operator==(const User&) const;
 	};
 }

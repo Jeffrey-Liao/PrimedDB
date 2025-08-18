@@ -156,6 +156,7 @@
     <ClCompile Include="source\TableDef.cpp" />
     <ClCompile Include="source\TimeStampDef.cpp" />
     <ClCompile Include="source\UserDef.cpp" />
+    <ClCompile Include="source\UserManagerDef.cpp" />
     <ClCompile Include="Test.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -172,8 +173,7 @@
     <ClInclude Include="header\Table.h" />
     <ClInclude Include="header\TimeStamp.h" />
     <ClInclude Include="header\User.h" />
-    <ClInclude Include="header\UserManger.h" />
-    <ClInclude Include="LiaoException.h" />
+    <ClInclude Include="header\UserManager.h" />
     <ClInclude Include="Memory.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,5 +1,5 @@
 #include "Global.h"
-#include "User.h"
+#include "UserManager.h"
 #include <iostream>
 USELIAO;
 USESTD;
@@ -14,18 +14,9 @@ void genId()
 }
 int main()
 {
-    string name = "liao", password = "654321";
-    User user(name,password,UserLevel::Administrator);
-    user.changePassword("123456");
-    password = "123456";
-    password = User::PassWordHash(password);
-    cout<< user.validate(password) << "\n";
-    name = "test";
-
-    cout<< user.createTable(name, user.getLevel()).toString()<<endl;
-    name = "hello";
-    cout << user.createTable(name, user.getLevel()).toString()<<endl;
-    name = "world";
-    cout << user.createTable(name, user.getLevel()).toString() << endl;
-    cout<<user.toString() << "\n";
+    auto& ref = UserManager::getInstance();
+    string name = "hello", password ="world1.." ;
+    ref.create(name, password, UserLevel::Administrator);
+    name = "hel", password = "world";
+    cout << (ref.create(name,password , UserLevel::Administrator) == nullptr);
 }

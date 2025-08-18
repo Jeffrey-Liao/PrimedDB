@@ -81,6 +81,9 @@
     <ClCompile Include="source\StructFileDef.cpp">
       <Filter>Util\source</Filter>
     </ClCompile>
+    <ClCompile Include="source\UserManagerDef.cpp">
+      <Filter>Storage\Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="header\Log.h">
@@ -110,9 +113,6 @@
     <ClInclude Include="Memory.h">
       <Filter>Storage\Header</Filter>
     </ClInclude>
-    <ClInclude Include="LiaoException.h">
-      <Filter>Storage\Header</Filter>
-    </ClInclude>
     <ClInclude Include="header\Global.h">
       <Filter>Storage\Header</Filter>
     </ClInclude>
@@ -128,7 +128,7 @@
     <ClInclude Include="header\StructFile.h">
       <Filter>Util\header</Filter>
     </ClInclude>
-    <ClInclude Include="header\UserManger.h">
+    <ClInclude Include="header\UserManager.h">
       <Filter>Storage\Header</Filter>
     </ClInclude>
   </ItemGroup>

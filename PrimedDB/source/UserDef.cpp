@@ -217,4 +217,8 @@ namespace liao::PrimedDB
 		m_tables = user.m_tables;
 		return *this;
 	}
+	bool User::operator==(const User& object) const
+	{
+		return m_id == object.getId();
+	}
 }
