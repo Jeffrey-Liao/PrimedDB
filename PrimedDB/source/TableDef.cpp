@@ -4,7 +4,7 @@ USESTD;
 namespace liao::PrimedDB
 {
 	Table::Table()
-		:m_id("null"),m_name("null"),m_permission(UserLevel::None),m_owner(User::NullRef),m_recordNumber(-1)
+		:m_id("null"),m_name("null"),m_permission(UserLevel::None),m_owner(User::GetNullRef()),m_recordNumber(-1)
 	{}
 	Table::Table(std::string& name, User& owner, UserLevel permission)
 		:m_id(StaticFunc::GetUniqueId()),m_owner(owner),m_permission(permission)
@@ -19,7 +19,8 @@ namespace liao::PrimedDB
 	void Table::addColumn(std::string& name, short int byteSize)
 	{
 		WriteLock lock(m_mutex);
-		m_columns.emplace_back(name, byteSize, *this);
+		Column newColumn(name, byteSize, *this);
+		m_columns.emplace_back(newColumn);
 	}
 	void Table::rename(std::string& name)
 	{
@@ -27,16 +28,7 @@ namespace liao::PrimedDB
 		if (name != "null")
 			m_name = std::move(name);
 	}
-	void Table::dropColumn(const std::string& name)
-	{
-		auto iter = findColumn(name);
-		WriteLock lock(m_mutex);
-		if (iter != m_columns.end())
-        {
-            m_columns.erase(iter);
-        }
-	}
-	auto Table::findColumn(const std::string& name) 
+	auto Table::findColumn(const std::string& name)
 	{
 		ReadLock lock(m_mutex);
 		for (auto iter = m_columns.begin(); iter != m_columns.end(); ++iter)
@@ -60,6 +52,16 @@ namespace liao::PrimedDB
 		}
 		return m_columns.end();
 	}
+	void Table::dropColumn(const std::string& name)
+	{
+		auto iter = findColumn(name);
+		WriteLock lock(m_mutex);
+		if (iter != m_columns.end())
+        {
+            m_columns.erase(iter);
+        }
+	}
+	
 	const string& Table::getId() const
 	{
 		return m_id;
@@ -91,7 +93,7 @@ namespace liao::PrimedDB
 		{
 			return *iter;
 		}
-		return Column::NullRef;
+		return Column::GetNullRef();
 	}
 	const std::vector<Column>& Table::getColumns() const
 	{
@@ -126,7 +128,7 @@ namespace liao::PrimedDB
 	{
 		std::ostringstream oss;
         ReadLock lock(m_mutex);
-		oss<<format("id:{},name:{},permission{},owner:{},size:{}",m_id, m_name,static_cast<int>(m_permission),m_owner.getName(), this->size());
+		oss<<format("id:{},name:{},permission:{},owner:{},size:{}",m_id, m_name,static_cast<int>(m_permission),m_owner.getName(), this->size());
 		for (int n =0;n<this->size();++n)
 		{
 			if (n+1<size())
@@ -136,6 +138,16 @@ namespace liao::PrimedDB
 			oss<<m_columns[n].toString();
 		}
         return oss.str();
+	}
+	Table& Table::operator=(const Table& object)
+	{
+        m_id = object.m_id;
+        m_name = object.m_name;
+        m_permission = object.m_permission;
+        m_owner = object.m_owner;
+        m_columns = object.m_columns;
+        m_recordNumber = object.m_recordNumber;
+		return *this;
 	}
 	Table::~Table()
 	{

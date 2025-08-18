@@ -1,6 +1,6 @@
 #pragma once
 #include <Table.h>
-namespace liao::db
+namespace liao::PrimedDB
 {
 	class Schema
 	{

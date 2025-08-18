@@ -27,6 +27,7 @@ namespace liao::Util
                 StaticFunc::Split(key_value, line, ':');
                 set(key_value[0], key_value[1]);
 			}
+			return true;
 		}
 	}
 	void StructFile::save()

@@ -9,15 +9,16 @@ namespace liao::PrimedDB
 		std::string m_name;
 		std::vector<Column> m_columns;
 		UserLevel m_permission;
-		const User& m_owner;
+		User& m_owner;
 		mutable std::shared_mutex m_mutex;
 		int m_recordNumber;
 	private:
 
-		Table();
+
 	public:
+		Table();
 		Table(const Table&) = delete;
-		Table& operator=(const Table&) = delete;
+		Table& operator=(const Table&);
 		Table(Table&&) = delete;
 		Table(std::string& name, User& owner, UserLevel permission);
 		const std::string& getName() const;

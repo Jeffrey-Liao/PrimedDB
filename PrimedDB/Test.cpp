@@ -1,8 +1,10 @@
 #include "Global.h"
+#include "UserManager.h"
 #include <iostream>
 USELIAO;
 USESTD;
 USELIAOMATH;
+USELIAOPRIMED;
 static Mutex mutexMain;
 void genId()
 {
@@ -12,8 +14,9 @@ void genId()
 }
 int main()
 {
-    thread t1(genId);
-    thread t2(genId);
-    t1.join();
-    t2.join();
+    auto& ref = UserManager::getInstance();
+    string name = "hello", password ="world1.." ;
+    ref.create(name, password, UserLevel::Administrator);
+    name = "hel", password = "world";
+    cout << (ref.create(name,password , UserLevel::Administrator) == nullptr);
 }
