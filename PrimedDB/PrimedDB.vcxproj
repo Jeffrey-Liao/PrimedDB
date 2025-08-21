@@ -169,6 +169,7 @@
     <ClInclude Include="header\Log.h" />
     <ClInclude Include="header\PrimeNumberConvert.h" />
     <ClInclude Include="header\Schema.h" />
+    <ClInclude Include="header\Session.h" />
     <ClInclude Include="header\StructFile.h" />
     <ClInclude Include="header\Table.h" />
     <ClInclude Include="header\TimeStamp.h" />

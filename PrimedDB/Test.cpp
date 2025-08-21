@@ -17,6 +17,8 @@ int main()
     auto& ref = UserManager::getInstance();
     string name = "hello", password ="world1.." ;
     ref.create(name, password, UserLevel::Administrator);
-    name = "hel", password = "world";
-    cout << (ref.create(name,password , UserLevel::Administrator) == nullptr);
+    ref.login(name, password);
+    cout<< ref.remove(UserManager::GetSystemUser(), name) << "\n";
+    ref.logout(name);
+    cout << ref.remove(UserManager::GetSystemUser(), name) << "\n";
 }
