@@ -12,7 +12,8 @@ namespace liao::PrimedDB
 		User& m_owner;
 		mutable std::shared_mutex m_mutex;
 		int m_recordNumber;
-	private:
+
+
 
 
 	public:

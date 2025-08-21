@@ -1,11 +1,12 @@
 #pragma once
-#include "User.h"
+#include "Session.h"
 namespace liao::PrimedDB
 {
+	class Session;
 	class UserManager:public Singleton<UserManager>
 	{
 		std::unordered_map<std::string,std::shared_ptr<User>>m_allUsers;
-		std::vector<std::shared_ptr<User>> m_took;
+		std::vector<Session> m_took;
 		static User System;
 		mutable ShareMutex m_mutex;
 
