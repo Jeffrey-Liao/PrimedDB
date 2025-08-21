@@ -13,12 +13,15 @@ namespace liao ::PrimedDB
 	public:
 		Session();
 		Session(const std::shared_ptr<User>& user);
+		Session(Session&& other);
 		void execute();
 		void terminate();
 		bool isEmpty()const;
 		bool compare(Session& other)const;
 		bool compare(const std::shared_ptr<User>& user) const;
+		Session& operator=(Session&& other);
 		bool operator==(const std::shared_ptr<User>& user)const;
 		bool operator==(Session& other)const;
+		~Session();
 	};
 }

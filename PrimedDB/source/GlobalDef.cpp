@@ -22,4 +22,5 @@ namespace liao {
 	}
 	Math::HashType Configuration::UserIDHashType = Math::HashType::SHA256;
 	string Configuration::UserInforFile = "users.dat";
+
 }

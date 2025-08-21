@@ -69,16 +69,25 @@ namespace liao::PrimedDB
 	}
 	bool UserManager::allowControl(UserLevel operatorLevel, const std::string& name)
 	{
-		UserLevel level;
+		return isUserInSession(name) && levelQualified(operatorLevel,name);
+	}
+	bool UserManager::levelQualified(UserLevel level, const std::string& name)
+	{
+		UserLevel userLevel;
 		{
 			ReadLock lock(m_mutex);
-			level = m_allUsers[name]->getLevel();
+			userLevel = m_allUsers[name]->getLevel();
 		}
-		return !isUserInSession(name) && operatorLevel >= UserLevel::Manager&&operatorLevel>level;
+		return level >= UserLevel::Manager && level > userLevel;
 	}
 	bool UserManager::remove(const User& executor, const std::string& who)
 	{
-		if (exist(who)&&allowControl(executor.getLevel(),who))
+		auto iter = userInSession(who);
+		if (iter != m_took.end())
+		{
+			m_took.erase(iter);
+		}
+		if (exist(who)&&levelQualified(executor.getLevel(),who))
 		{
 			WriteLock lock(m_mutex);
 			m_allUsers.erase(who);

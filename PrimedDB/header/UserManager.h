@@ -12,6 +12,7 @@ namespace liao::PrimedDB
 
 		bool allowLogin(const std::string& name,const std::string& password);
 		bool allowControl(UserLevel operatorLevel, const std::string& name);
+		bool levelQualified(UserLevel level, const std::string& name);
 		static bool InvalidName(std::string& name);
 		static bool IsSavePassword(std::string& password);
 	public:
