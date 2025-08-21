@@ -3,32 +3,76 @@ USESTD;
 USECRPT;
 namespace liao::Util
 {
-    void TimeStamp::setTime(const TimePoint& time)
+    TimeStamp::TimePoint TimeStamp::now()
+    {
+        auto timeZone = chrono::current_zone();
+        auto now = SystemClock::now();
+        const auto info = timeZone->get_info(now);
+        const auto offset_seconds = info.offset;
+
+        return now + offset_seconds;
+    }
+    void TimeStamp::setTime(TimePoint& time)
     {
         WriteLock lock(m_mutex);
-        m_timestamp = std::chrono::duration_cast<std::chrono::seconds>(
-            time.time_since_epoch()
-        ).count();
+        m_timestamp =time;
     }
     void TimeStamp::initializeString()
     {
+        WriteLock lock(m_mutex);
         if (m_literal.capacity() < TIMESTAMP_LENGTH)
             m_literal.reserve(TIMESTAMP_LENGTH);
     }
     void TimeStamp::convertToString(const TimePoint& time)
     {
         initializeString();
-        if (m_timestamp > 0)
-           m_literal = format("{:%Y-%m-%d %H:%M:%S}", time);
+        WriteLock lock(m_mutex);
+        m_literal = format("{:%Y-%m-%d %H:%M:%S}", time);
+    }
+    std::string TimeStamp::get(TimeType type)const
+    {
+        if (isEmpty())
+            return m_literal;
+        if (type < TimeType::Hour)
+        {
+            string date = m_literal.substr(0,m_literal.find(" "));
+            if (type == TimeType::Year)
+            {
+                return date.substr(0, date.find("-"));
+            }
+            else if (type == TimeType::Month)
+            {
+                return date.substr(date.find("-")+1, date.find_last_of("-") - date.find("-")-1);
+            }
+            else if (type == TimeType::Day)
+            {
+                return date.substr(date.find_last_of("-")+1);
+            }
+        }
+        else
+        {
+            string time = m_literal.substr(m_literal.find(" ")+1, m_literal.size() - m_literal.find(" "));
+            if (type == TimeType::Hour)
+            {
+                return time.substr(0, time.find(":"));
+            }
+            else if (type == TimeType::Minute)
+            {
+                return time.substr(time.find(":") + 1, time.find_last_of(":") - time.find(":")-1);
+            }
+            else
+                return time.substr(time.find_last_of(":") + 1);
+        }
+        
     }
     TimeStamp::TimeStamp()
-        : m_timestamp(0)
     {
         initializeString();
     }
-    TimeStamp::TimeStamp(const TimePoint now)
+    TimeStamp::TimeStamp(TimeStamp::TimePoint now)
+        : m_timestamp(now)
     {
-        reset(now);
+        reset(m_timestamp);
     }
     TimeStamp::TimeStamp(const TimeStamp& obj)
         :m_timestamp(obj.m_timestamp),m_literal(obj.m_literal)
@@ -36,31 +80,42 @@ namespace liao::Util
     TimeStamp::TimeStamp(TimeStamp&& obj) noexcept
         :m_literal(std::move(obj.m_literal)),m_timestamp(obj.m_timestamp)
     {}
-    const std::string& TimeStamp::getString() const
+    const std::string& TimeStamp::getString()
     {
+        if (m_literal.empty())
+        {
+            reset(m_timestamp);
+        }
+        ReadLock lock(m_mutex);
         return m_literal;
     }
     std::string&& TimeStamp::moveString()
     {
+        WriteLock lock(m_mutex);
         return std::move(m_literal);
     }
     long long TimeStamp::getTimestamp() const
     {
-        return m_timestamp;
+        ReadLock lock(m_mutex);
+        return std::chrono::duration_cast<std::chrono::seconds>(
+            m_timestamp.time_since_epoch()
+        ).count();
     }
-    void TimeStamp::reset(const TimePoint now)
+    void TimeStamp::reset(TimePoint& now)
     {
         setTime(now);
         convertToString(now);
     }
     void TimeStamp::clear()
     {
+        WriteLock lock(m_mutex);
         m_literal.clear();
-        m_timestamp = 0;
+        m_timestamp = TimePoint();
     }
     bool TimeStamp::isEmpty() const
     {
-        return m_literal.empty()|| m_timestamp==0;
+        ReadLock lock(m_mutex);
+        return m_literal.empty()||m_timestamp.time_since_epoch().count() == 0;
     }
     bool TimeStamp::compare(const TimeStamp& obj) const
     {
@@ -76,6 +131,16 @@ namespace liao::Util
     }
     long long TimeStamp::distance(const TimeStamp& obj) const
     {
-        return m_timestamp - obj.m_timestamp;
+        chrono::duration<long long> duration;
+        {
+            ReadLock lock(m_mutex);
+            auto interval = m_timestamp - obj.m_timestamp;
+            duration = duration_cast<chrono::seconds>(interval);
+        }
+        return duration.count();
+    }
+    TimeStamp::operator std::string() const
+    {
+        return m_literal;
     }
 }

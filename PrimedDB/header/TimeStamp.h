@@ -1,35 +1,72 @@
 #pragma once
 #include "Defs.h"
-namespace liao::Util { 
+namespace liao::Util {
+    enum class TimeType:char
+    {
+        Year,
+        Month,
+        Day,
+        Hour,
+        Minute,
+        Second
+    };
     constexpr int TIMESTAMP_LENGTH = 20;
+    DYNAMIC
+    concept Concept_TimeTypes = requires
+    {
+        std::same_as <T, std::chrono::hours>
+            || std::same_as < T, std::chrono::minutes>
+            || std::same_as < T, std::chrono::seconds>
+            || std::same_as < T, std::chrono::milliseconds>
+            || std::same_as < T, std::chrono::microseconds>
+            || std::same_as < T, std::chrono::nanoseconds>;
+    };
 	class TimeStamp {
 	public:
         using TimePoint = std::chrono::system_clock::time_point;
         using SystemClock = std::chrono::system_clock;
     private:
         std::string m_literal;
-        long long m_timestamp;
-        ShareMutex m_mutex;
+        TimePoint m_timestamp;
+        mutable ShareMutex m_mutex;
 
-        void setTime(const TimePoint& time);
+        void setTime(TimePoint& time);
         void convertToString(const TimePoint& time);
         void initializeString();
     public:
         TimeStamp();
-        TimeStamp(const TimePoint);
+        TimeStamp(TimePoint now);
         TimeStamp(const TimeStamp& obj);
         TimeStamp(TimeStamp&& obj) noexcept;
-        const std::string& getString() const;
+        const std::string& getString();
         std::string&& moveString();
         long long getTimestamp() const;
-        void reset(const TimePoint now = SystemClock::now());
+        void reset(TimePoint& now);
         void clear();
         bool isEmpty() const;
         bool compare(const TimeStamp& obj) const;
         bool isEarlier(const TimeStamp& obj)const;
         bool isLater(const TimeStamp& obj)const;
-        long long distance(const TimeStamp& obj) const; 
-
+        std::string get(TimeType)const;
+        long long distance(const TimeStamp& obj) const;
+        DYNAMICCON(Concept_TimeTypes)
+        void add(T timeTypes)
+        {
+            {
+                WriteLock lock(m_mutex);
+                m_timestamp += timeTypes;
+            }
+            reset(m_timestamp);
+        }
+        DYNAMICCON(Concept_TimeTypes)
+	    void minus(T timeTypes)
+        {
+            WriteLock lock(m_mutex);
+            m_timestamp -= timeTypes;
+            reset(m_timestamp);
+        }
+        static TimePoint now();
+        operator std::string() const;
         ~TimeStamp() = default;
     };
 }
