@@ -1,5 +1,6 @@
 #include "Global.h"
 #include "UserManager.h"
+#include "TimeStamp.h"
 #include <iostream>
 USELIAO;
 USESTD;
@@ -14,16 +15,16 @@ static ShareMutex mutexMain;
 //}
 int main()
 {
-    auto& ref = UserManager::getInstance();
-    string name = "hello", password ="world1.." ;
-    ref.create(name, password, UserLevel::Administrator);
-    ref.login(name, password);
-    int n = 0;
-    cin>>n;
-    cout << ref.remove(UserManager::GetSystemUser(), name) << "\n";
-
-
-    cout << n;
-    cin >> n;
-    cout << n;
+	Util::TimeStamp timeStamp;
+	auto time = Util::TimeStamp::now();
+    timeStamp.reset(time);
+	cout<<timeStamp.getString()<<endl;
+	cout << timeStamp.get(Util::TimeType::Year) << endl;
+	cout << timeStamp.get(Util::TimeType::Month) << endl;
+	cout << timeStamp.get(Util::TimeType::Day) << endl;
+	cout << timeStamp.get(Util::TimeType::Hour) << endl;
+	cout << timeStamp.get(Util::TimeType::Minute) << endl;
+	cout << timeStamp.get(Util::TimeType::Second) << endl;
+	timeStamp.add(chrono::hours(2));
+	cout<<timeStamp.getString()<<endl;
 }
