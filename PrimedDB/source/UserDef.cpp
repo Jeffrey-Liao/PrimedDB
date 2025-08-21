@@ -183,6 +183,7 @@ namespace liao::PrimedDB
 	}
 	bool User::validate(const std::string& password) const
 	{
+		ReadLock lock(m_mutex);
 		return m_password == password;
 	}
 	void User::setLevel(UserLevel level)
@@ -210,6 +211,7 @@ namespace liao::PrimedDB
 	}
 	User& User::operator=(User& user)
 	{
+		WriteLock lock(m_mutex);
 		m_id = user.m_id;
         m_level = user.m_level;
         m_name = user.m_name;
@@ -219,6 +221,7 @@ namespace liao::PrimedDB
 	}
 	bool User::operator==(const User& object) const
 	{
+		ReadLock lock(m_mutex);
 		return m_id == object.getId();
 	}
 }

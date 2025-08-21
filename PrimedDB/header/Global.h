@@ -3,6 +3,7 @@
 #include "HashContainer.h"
 namespace liao
 {
+	static ShareMutex CoutMutex;
 	namespace PrimedDB
 	{
 		class Table;

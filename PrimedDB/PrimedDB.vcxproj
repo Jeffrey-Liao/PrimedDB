@@ -152,6 +152,7 @@
     <ClCompile Include="source\HashContainerDef.cpp" />
     <ClCompile Include="source\LogDef.cpp" />
     <ClCompile Include="source\PrimeNumberConvertDef.cpp" />
+    <ClCompile Include="source\SessionDef.cpp" />
     <ClCompile Include="source\StructFileDef.cpp" />
     <ClCompile Include="source\TableDef.cpp" />
     <ClCompile Include="source\TimeStampDef.cpp" />
@@ -162,13 +163,13 @@
   <ItemGroup>
     <ClInclude Include="header\ClassInfor.h" />
     <ClInclude Include="header\Column.h" />
-    <ClInclude Include="header\Columns.h" />
     <ClInclude Include="header\Defs.h" />
     <ClInclude Include="header\Global.h" />
     <ClInclude Include="header\HashContainer.h" />
     <ClInclude Include="header\Log.h" />
     <ClInclude Include="header\PrimeNumberConvert.h" />
     <ClInclude Include="header\Schema.h" />
+    <ClInclude Include="header\Session.h" />
     <ClInclude Include="header\StructFile.h" />
     <ClInclude Include="header\Table.h" />
     <ClInclude Include="header\TimeStamp.h" />

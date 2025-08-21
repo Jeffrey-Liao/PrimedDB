@@ -84,6 +84,9 @@
     <ClCompile Include="source\UserManagerDef.cpp">
       <Filter>Storage\Source</Filter>
     </ClCompile>
+    <ClCompile Include="source\SessionDef.cpp">
+      <Filter>Storage\Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="header\Log.h">
@@ -99,9 +102,6 @@
       <Filter>Primed\Header</Filter>
     </ClInclude>
     <ClInclude Include="header\Column.h">
-      <Filter>Storage\Header</Filter>
-    </ClInclude>
-    <ClInclude Include="header\Columns.h">
       <Filter>Storage\Header</Filter>
     </ClInclude>
     <ClInclude Include="header\Table.h">
@@ -129,6 +129,9 @@
       <Filter>Util\header</Filter>
     </ClInclude>
     <ClInclude Include="header\UserManager.h">
+      <Filter>Storage\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\Session.h">
       <Filter>Storage\Header</Filter>
     </ClInclude>
   </ItemGroup>
