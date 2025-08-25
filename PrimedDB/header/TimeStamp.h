@@ -1,4 +1,5 @@
 #pragma once
+#include "ClassInfor.h"
 #include "Defs.h"
 namespace liao::Util {
     enum class TimeType:char
@@ -33,6 +34,13 @@ namespace liao::Util {
         void setTime(TimePoint& time);
         void convertToString(const TimePoint& time);
         void initializeString();
+        std::string toYear(std::string& date)const;
+        std::string toMonth(std::string& date)const;
+        std::string toDay(std::string& date)const;
+        std::string toHour(std::string& time)const;
+        std::string toMinute(std::string& time)const;
+        std::string toSecond(std::string& time)const;
+
     public:
         TimeStamp();
         TimeStamp(TimePoint now);

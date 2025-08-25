@@ -179,7 +179,7 @@ namespace liao::PrimedDB
 	{
 		HashContainer container;
 		container.generate(rawText);
-		return container.moveHashHex();
+		return container.getHashHex();
 	}
 	bool User::validate(const std::string& password) const
 	{

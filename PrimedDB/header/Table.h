@@ -13,9 +13,6 @@ namespace liao::PrimedDB
 		mutable std::shared_mutex m_mutex;
 		int m_recordNumber;
 
-
-
-
 	public:
 		Table();
 		Table(const Table&) = delete;

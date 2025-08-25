@@ -29,6 +29,30 @@ namespace liao::Util
         WriteLock lock(m_mutex);
         m_literal = format("{:%Y-%m-%d %H:%M:%S}", time);
     }
+    std::string TimeStamp::toYear(std::string& date) const
+    {
+        return date.substr(0, date.find("-"));
+    }
+    std::string TimeStamp::toMonth(std::string& date)const
+    {
+        return date.substr(date.find("-") + 1, date.find_last_of("-") - date.find("-") - 1);
+    }
+    std::string TimeStamp::toDay(std::string& date)const
+    {
+        return date.substr(date.find_last_of("-") + 1);
+    }
+    std::string TimeStamp::toHour(std::string& time)const
+    {
+        return time.substr(0, time.find(":"));
+    }
+    std::string TimeStamp::toMinute(std::string& time)const
+    {
+        return time.substr(time.find(":") + 1, time.find_last_of(":") - time.find(":") - 1);
+    }
+    std::string TimeStamp::toSecond(std::string& time)const
+    {
+        return time.substr(time.find_last_of(":") + 1);
+    }
     std::string TimeStamp::get(TimeType type)const
     {
         if (isEmpty())
@@ -38,15 +62,15 @@ namespace liao::Util
             string date = m_literal.substr(0,m_literal.find(" "));
             if (type == TimeType::Year)
             {
-                return date.substr(0, date.find("-"));
+                return toYear(date);
             }
             else if (type == TimeType::Month)
             {
-                return date.substr(date.find("-")+1, date.find_last_of("-") - date.find("-")-1);
+                return toMonth(date);
             }
             else if (type == TimeType::Day)
             {
-                return date.substr(date.find_last_of("-")+1);
+                return toDay(date);
             }
         }
         else
@@ -54,22 +78,22 @@ namespace liao::Util
             string time = m_literal.substr(m_literal.find(" ")+1, m_literal.size() - m_literal.find(" "));
             if (type == TimeType::Hour)
             {
-                return time.substr(0, time.find(":"));
+                return toHour(time);
             }
             else if (type == TimeType::Minute)
             {
-                return time.substr(time.find(":") + 1, time.find_last_of(":") - time.find(":")-1);
+                return toMinute(time);
             }
             else
-                return time.substr(time.find_last_of(":") + 1);
+                return toSecond(time);
         }
-        
+        return "";
     }
     TimeStamp::TimeStamp()
     {
         initializeString();
     }
-    TimeStamp::TimeStamp(TimeStamp::TimePoint now)
+    TimeStamp::TimeStamp(TimePoint now)
         : m_timestamp(now)
     {
         reset(m_timestamp);

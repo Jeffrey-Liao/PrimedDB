@@ -128,8 +128,4 @@ namespace liao::Math
 		ReadLock lock(m_mutex);
 		return m_hashHex;
 	}
-	std::string&& HashContainer::moveHashHex()
-	{
-		return std::move(m_hashHex);
-	}
 }

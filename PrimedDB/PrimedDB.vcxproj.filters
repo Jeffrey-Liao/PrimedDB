@@ -134,5 +134,8 @@
     <ClInclude Include="header\Session.h">
       <Filter>Storage\Header</Filter>
     </ClInclude>
+    <ClInclude Include="header\SchemaManager.h">
+      <Filter>Storage\Header</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

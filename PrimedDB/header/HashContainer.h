@@ -61,6 +61,5 @@ namespace liao::Math
 		const std::vector<unsigned int>& getHashNumbers() const;
 		const CryptoPP::byte* getHashByte() const;
 		const std::string& getHashHex() const;
-		std::string&& moveHashHex();
 	};
 }
