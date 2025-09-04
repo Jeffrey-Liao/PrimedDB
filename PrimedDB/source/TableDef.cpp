@@ -139,6 +139,10 @@ namespace liao::PrimedDB
 		}
         return oss.str();
 	}
+	UserLevel Table::getPermission() const
+	{
+		return m_permission;
+	}
 	Table& Table::operator=(const Table& object)
 	{
         m_id = object.m_id;

@@ -22,6 +22,7 @@ namespace liao::PrimedDB
 		const std::string& getName() const;
 		auto findColumn(const std::string& name);
 		auto findColumn(const std::string& name) const;
+		UserLevel getPermission() const;
 		void clear();
 		int size()const;
 		const std::string& getId() const;

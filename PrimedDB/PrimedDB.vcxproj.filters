@@ -57,9 +57,6 @@
     <ClCompile Include="source\PrimeNumberConvertDef.cpp">
       <Filter>Primed\Source</Filter>
     </ClCompile>
-    <ClCompile Include="Memory.cpp">
-      <Filter>Storage\Source</Filter>
-    </ClCompile>
     <ClCompile Include="Inactive.cpp">
       <Filter>Test</Filter>
     </ClCompile>
@@ -87,6 +84,12 @@
     <ClCompile Include="source\SessionDef.cpp">
       <Filter>Storage\Source</Filter>
     </ClCompile>
+    <ClCompile Include="source\SchemaDef.cpp">
+      <Filter>Storage\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\ErrorManagerDef.cpp">
+      <Filter>Util\source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="header\Log.h">
@@ -110,9 +113,6 @@
     <ClInclude Include="header\Schema.h">
       <Filter>Storage\Header</Filter>
     </ClInclude>
-    <ClInclude Include="Memory.h">
-      <Filter>Storage\Header</Filter>
-    </ClInclude>
     <ClInclude Include="header\Global.h">
       <Filter>Storage\Header</Filter>
     </ClInclude>
@@ -134,7 +134,16 @@
     <ClInclude Include="header\Session.h">
       <Filter>Storage\Header</Filter>
     </ClInclude>
-    <ClInclude Include="header\SchemaManager.h">
+    <ClInclude Include="header\TableManager.h">
+      <Filter>Storage\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\ErrorManager.h">
+      <Filter>Util\header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\Transection.h">
+      <Filter>Storage\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\DiskManager.h">
       <Filter>Storage\Header</Filter>
     </ClInclude>
   </ItemGroup>

@@ -34,15 +34,15 @@ namespace liao::PrimedDB
 	bool UserManager::InvalidName(std::string& name)
 	{
 		string cmp = name;
-		std::transform(cmp.begin(), cmp.end(), cmp.begin(),
+		ranges::transform(cmp.begin(), cmp.end(), cmp.begin(),
 			[](unsigned char c) { return std::tolower(c); });
-		return cmp.empty() || cmp.length() <= 3 || cmp.length() > 50 || cmp == "null" || cmp == "system";
+		return name.empty() || name.length() <= 3 || name.length() > 50 || cmp == "null" || cmp == "system";
 	}
 	bool UserManager::IsSavePassword(std::string& password)
 	{
 		return password.length()>=8 && 
-			std::any_of(password.begin(), password.end(), [](char c){return ispunct(static_cast<unsigned char>(c));})&& 
-			std::any_of(password.begin(), password.end(), [](char c) { return isalnum(static_cast<unsigned char>(c));});
+			ranges::any_of(password.begin(), password.end(), [](char c){return ispunct(static_cast<unsigned char>(c));})&& 
+			ranges::any_of(password.begin(), password.end(), [](char c) { return isalnum(static_cast<unsigned char>(c));});
 	}
 	int UserManager::userCount() const
 	{
@@ -52,7 +52,7 @@ namespace liao::PrimedDB
 	{
 		return m_took.size();
 	}
-	std::shared_ptr<User> UserManager::create(std::string& name, std::string& password,UserLevel level)
+	UserPtr UserManager::create(std::string& name, std::string& password,UserLevel level)
 	{
 		if (exist(name)||InvalidName(name)||!IsSavePassword(password))
 		{
@@ -135,12 +135,12 @@ namespace liao::PrimedDB
 		}
 		return false;
 	}
-	std::shared_ptr<User> UserManager::get(const std::string& name)
+	UserPtr UserManager::get(const std::string& name)
 	{
 		ReadLock lock(m_mutex);
 		return m_allUsers[name];
 	}
-	const std::shared_ptr<User> UserManager::get(const std::string& name) const
+	const UserPtr UserManager::get(const std::string& name) const
 	{
         ReadLock lock(m_mutex);
 		return m_allUsers.find(name)->second;

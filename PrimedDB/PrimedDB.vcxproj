@@ -74,7 +74,7 @@
     <IncludePath>D:\Code\C++\PrimedDB\PrimedDB\externalLib\cryptopp890;D:\Code\C++\PrimedDB\PrimedDB\header;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>D:\Code\C++\PrimedDB\PrimedDB\externalLib\cryptopp890;D:\Code\C++\PrimedDB\PrimedDB\header;$(IncludePath)</IncludePath>
+    <IncludePath>C:\src\vcpkg\installed\x64-windows\include\asio\windows;D:\Code\C++\PrimedDB\PrimedDB\externalLib\cryptopp890;D:\Code\C++\PrimedDB\PrimedDB\header;$(IncludePath)</IncludePath>
     <LibraryPath>D:\Code\C++\PrimedDB\PrimedDB\externalLib\cryptopp890\x64\Output\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -140,18 +140,19 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>D:\Code\C++\PrimedDB\PrimedDB\externalLib\cryptopp890\x64\Output\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>cryptlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>cryptlib.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Inactive.cpp" />
-    <ClCompile Include="Memory.cpp" />
     <ClCompile Include="source\ClassInforDef.cpp" />
     <ClCompile Include="source\ColumnDef.cpp" />
+    <ClCompile Include="source\ErrorManagerDef.cpp" />
     <ClCompile Include="source\GlobalDef.cpp" />
     <ClCompile Include="source\HashContainerDef.cpp" />
     <ClCompile Include="source\LogDef.cpp" />
     <ClCompile Include="source\PrimeNumberConvertDef.cpp" />
+    <ClCompile Include="source\SchemaDef.cpp" />
     <ClCompile Include="source\SessionDef.cpp" />
     <ClCompile Include="source\StructFileDef.cpp" />
     <ClCompile Include="source\TableDef.cpp" />
@@ -164,19 +165,21 @@
     <ClInclude Include="header\ClassInfor.h" />
     <ClInclude Include="header\Column.h" />
     <ClInclude Include="header\Defs.h" />
+    <ClInclude Include="header\DiskManager.h" />
+    <ClInclude Include="header\ErrorManager.h" />
     <ClInclude Include="header\Global.h" />
     <ClInclude Include="header\HashContainer.h" />
     <ClInclude Include="header\Log.h" />
     <ClInclude Include="header\PrimeNumberConvert.h" />
     <ClInclude Include="header\Schema.h" />
-    <ClInclude Include="header\SchemaManager.h" />
     <ClInclude Include="header\Session.h" />
     <ClInclude Include="header\StructFile.h" />
     <ClInclude Include="header\Table.h" />
+    <ClInclude Include="header\TableManager.h" />
     <ClInclude Include="header\TimeStamp.h" />
+    <ClInclude Include="header\Transection.h" />
     <ClInclude Include="header\User.h" />
     <ClInclude Include="header\UserManager.h" />
-    <ClInclude Include="Memory.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

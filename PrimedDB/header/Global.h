@@ -42,6 +42,15 @@ namespace liao
 	{
 		Nothing,
 	};
+	enum class OperationTarget :char
+	{
+		None,
+		Table,
+		Column,
+		User,
+		Session,
+		Schema,
+	};
 
 	DYNAMIC
 	concept Numeric = std::integral<T> || std::floating_point<T>;
@@ -108,6 +117,7 @@ namespace liao
 	protected:
 		Singleton() = default;
 		~Singleton() = default;
+		static ShareMutex m_mutex;
 	public:
 		static T& getInstance()
 		{

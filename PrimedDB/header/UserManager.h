@@ -2,10 +2,11 @@
 #include "Session.h"
 namespace liao::PrimedDB
 {
+	using UserPtr = std::shared_ptr<User>;
 	class Session;
 	class UserManager:public Singleton<UserManager>
 	{
-		std::unordered_map<std::string,std::shared_ptr<User>>m_allUsers;
+		std::unordered_map<std::string,UserPtr>m_allUsers;
 		std::vector<Session> m_took;
 		static User System;
 		mutable ShareMutex m_mutex;
@@ -18,7 +19,7 @@ namespace liao::PrimedDB
 	public:
 
 		bool exist(const std::string& name) const;
-		std::shared_ptr<User> create(std::string& name,std::string& password, UserLevel userLevel);
+		UserPtr create(std::string& name,std::string& password, UserLevel userLevel);
 		bool remove(const User& executor,const std::string& who);
 		bool login(const std::string& name,const std::string& password);
 		bool logout(const std::string& name);
@@ -27,8 +28,9 @@ namespace liao::PrimedDB
 		bool isUserInSession(const std::string& who);
 		int userCount() const;
 		int sessionCount() const;
-		std::shared_ptr<User> get(const std::string& name);
-        const std::shared_ptr<User> get(const std::string& name) const;
+		const std::unordered_map<std::string, UserPtr> all()const;
+		UserPtr get(const std::string& name);
+        const UserPtr get(const std::string& name) const;
 		static const User& GetSystemUser();
 	};
 }

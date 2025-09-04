@@ -7,7 +7,7 @@ namespace liao::PrimedDB
 	{
 		execute();
 	}
-	Session::Session(const std::shared_ptr<User>& user)
+	Session::Session(const UserPtr& user)
 		:m_id(StaticFunc::GetUniqueId()),m_user(user), m_flag(false),m_ip("")
 	{
 		execute();
@@ -50,11 +50,11 @@ namespace liao::PrimedDB
 	{
 		return m_id == other.m_id;
 	}
-	bool Session::compare(const std::shared_ptr<User>& user)const
+	bool Session::compare(const UserPtr& user)const
 	{
 		return m_user == user;
 	}
-	bool Session::operator==(const std::shared_ptr<User>& user)const
+	bool Session::operator==(const UserPtr& user)const
 	{
 		return compare(user);
 	}
