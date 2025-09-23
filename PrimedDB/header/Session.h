@@ -1,6 +1,5 @@
 #pragma once
 #include "User.h"
-#include "UserManager.h"
 
 namespace liao::PrimedDB
 {

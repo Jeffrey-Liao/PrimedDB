@@ -1,21 +1,18 @@
-#include "Table.h"
 #include "User.h"
+#include "UserManager.h"
 USECRPT;
 USESTD;
 USELIAOMATH;
 namespace liao::PrimedDB
 {
-	User::User()
-		:m_name("null"), m_password("null"), m_level(UserLevel::None), m_id("null")
-	{}
 	void User::linkTables(const vector<string>& line)
 	{
-		WriteLock lock(m_mutex);
 		int start = 4;
 		if (line.size() > start)
 		{
-			for (;start<line.size();start++)
+			for (;start<line.size(); ++start)
 			{
+				WriteLock lock(m_mutex);
 				m_tables;
 			}
 		}
@@ -34,8 +31,12 @@ namespace liao::PrimedDB
 	}
 	User::User(const string& fileLine)
 	{
+		vector<string> user_table(2);
 		vector<string> userInfor(5);
-		StaticFunc::Split(userInfor, fileLine, ',');
+		StaticFunc::Split(user_table, fileLine, '|');
+		const string& userStr= user_table[0];
+		const string& tableStr = user_table[1];
+		StaticFunc::Split(userInfor, userStr, ' ');
 		if (userInfor.size() >= 4)
 		{
 			int n = 0;
@@ -55,6 +56,10 @@ namespace liao::PrimedDB
 	User::User(User&& object) noexcept
 		:m_name(std::move(object.m_name)), m_password(std::move(object.m_password)), m_level(object.m_level), m_id(std::move(object.m_id)),m_tables(std::move(object.m_tables))
 	{
+	}
+	User User::createUser(std::string name, std::string password, UserLevel level)
+	{
+		return User(name, password, level);
 	}
 	User::~User()
 	{
@@ -88,30 +93,30 @@ namespace liao::PrimedDB
 		ReadLock lock(m_mutex);
 		return m_id;
 	}
-	const vector<Table*>& User::getTables()const
+	const vector<TablePtr>& User::getTables()const
 	{
 		ReadLock lock(m_mutex);
 		return m_tables;
 	}
-	Table& User::getTable(const string& name)
+	TablePtr User::getTable(const string& name)
 	{
 		int index = findTable(name);
 		if ( index != -1)
 		{
 			ReadLock lock(m_mutex);
-			return *m_tables[index];
+			return m_tables[index];
 		}
-		return Table::GetNullRef();
+		return nullptr;
 	}
-	const Table& User::getTable(const string& name) const
+	const TablePtr User::getTable(const string& name) const
 	{
 		int index = findTable(name);
 		if (index != -1)
 		{
 			ReadLock lock(m_mutex);
-			return *m_tables[index];
+			return m_tables[index];
 		}
-		return Table::GetNullRef();
+		return nullptr;
 	}
 	int User::tableCount() const
 	{
@@ -131,23 +136,23 @@ namespace liao::PrimedDB
 		return m_level >= level;
 	}
 
-	Table& User::createTable(string& name, UserLevel permission)
+	TablePtr User::createTable(std::string_view schema, std::string_view name, UserLevel permission)
 	{
 		{
 			ReadLock lock(m_mutex);
-			if (findTable(name) != -1||name == "")
+			if (findTable(name) != -1||name.empty())
 			{
-				return Table::GetNullRef();
+				return nullptr;
 			}
 		}
 		WriteLock lock(m_mutex);
-		m_tables.push_back(new Table(name, *this,permission));
-		return *(m_tables[m_tables.size()-1]);
+		m_tables.emplace_back(new Table(*this,name,permission));
+		return m_tables[m_tables.size()-1];
 	}
 	bool User::rename(string& name)
 	{
 		WriteLock lock(m_mutex);
-		if (name == "null")
+		if (name == "null"|| UserManager::getInstance().exist(name))
 			return false;
 		m_name = std::move(name);
 		return true;
@@ -156,8 +161,8 @@ namespace liao::PrimedDB
 	{
 		int index = findTable(name);
 		WriteLock lock(m_mutex);
-		delete m_tables[index];
 		m_tables.erase(m_tables.begin() + index);
+
 	}
 	void User::renameTable(const string&  name, string&  newName)
 	{
@@ -191,21 +196,20 @@ namespace liao::PrimedDB
 		WriteLock lock(m_mutex);
 		m_level = level;
 	}
-
 	string User::toString() const
 	{
 		std::ostringstream oss;
 		ReadLock lock(m_mutex);
-		oss << format("{},{},{},{}", m_id, m_name, m_password, static_cast<int>(m_level));
+		oss << format("{} {} {} {}|", m_id, m_name, m_password, static_cast<int>(m_level));
 		for (int n = 0; n < m_tables.size(); ++n)
 		{
-			if (n + 1 <= m_tables.size())
+			if (n + 1 <= m_tables.size()&& n != 0)
 				oss << ',';
 			oss << m_tables[n]->getName();
 		}
 		return oss.str();
 	}
-	Table& User::operator[](const string&  name)
+	TablePtr User::operator[](const string&  name)
 	{
 		return getTable(name);
 	}

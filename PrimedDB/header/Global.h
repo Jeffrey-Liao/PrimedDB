@@ -1,17 +1,22 @@
 #pragma once
 #include "TimeStamp.h"
 #include "HashContainer.h"
+//.def file for structure definition. .inf file for informations. .dat file for data.
 namespace liao
 {
 	static ShareMutex CoutMutex;
+#define COLUMN_NAME_LEN 20
+#define TABLE_NAME_LEN 20
+#define USER_NAME_LEN 20
 	namespace PrimedDB
 	{
 		class Table;
 		class User;
 		class Column;
-
+		//for column
 		enum class DataType :char
 		{
+			Null,
 			Int,
 			Varchar,
 			Number,
@@ -97,7 +102,7 @@ namespace liao
 		}
 		static bool isNullObject(const T& obj)
 		{
-			return obj.getId() == "null";
+			return obj.getName() == "null";
 		}
 	};
 	template<Concept_NullRefField T>

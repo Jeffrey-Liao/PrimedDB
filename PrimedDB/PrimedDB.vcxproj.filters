@@ -90,6 +90,12 @@
     <ClCompile Include="source\ErrorManagerDef.cpp">
       <Filter>Util\source</Filter>
     </ClCompile>
+    <ClCompile Include="source\PageDef.cpp">
+      <Filter>Storage\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\DataCache.cpp">
+      <Filter>Storage\Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="header\Log.h">
@@ -144,6 +150,15 @@
       <Filter>Storage\Header</Filter>
     </ClInclude>
     <ClInclude Include="header\DiskManager.h">
+      <Filter>Storage\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\ControlManager.h">
+      <Filter>Storage\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\DataCache.h">
+      <Filter>Storage\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\Page.h">
       <Filter>Storage\Header</Filter>
     </ClInclude>
   </ItemGroup>

@@ -18,6 +18,7 @@
 #include <format>
 #include <fstream>
 #include "sha.h"
+#include <string_view>
 #define DYNAMIC template<class T>
 #define USESTD using namespace std
 #define DYNAMICCON(conce) template<conce T>

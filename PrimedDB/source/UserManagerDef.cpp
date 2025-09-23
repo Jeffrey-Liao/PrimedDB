@@ -2,10 +2,28 @@
 USESTD;
 namespace liao::PrimedDB
 {
-	User UserManager::System;
+	
+	User UserManager::System = User::createUser("system", "null", UserLevel::System);
+	UserManager::UserManager()
+	{
+		ifstream file(Configuration::UserInforFile);
+		string cache;
+		if (!file.fail())
+		{
+			while (file.eof())
+			{
+				getline(file, cache);
+                if (cache.empty())
+                    break;
+				vector<string> token;
+                StaticFunc::Split(token, cache, ':');
+				m_allUsers.insert(token[0],cache);
+			}
+		}
+	}
 	const User& UserManager::GetSystemUser()
 	{
-		if (System.getName() == User::GetNullRef().getName())
+		if (System.getName() == "system")
 		{
 			string str = "system";
 			System.rename(str);
@@ -36,9 +54,9 @@ namespace liao::PrimedDB
 		string cmp = name;
 		ranges::transform(cmp.begin(), cmp.end(), cmp.begin(),
 			[](unsigned char c) { return std::tolower(c); });
-		return name.empty() || name.length() <= 3 || name.length() > 50 || cmp == "null" || cmp == "system";
+		return name.empty() || name.length() <= 3 || name.length() > USER_NAME_LEN || cmp == "null" || cmp == "system";
 	}
-	bool UserManager::IsSavePassword(std::string& password)
+	bool UserManager::isSafePassword(std::string& password)
 	{
 		return password.length()>=8 && 
 			ranges::any_of(password.begin(), password.end(), [](char c){return ispunct(static_cast<unsigned char>(c));})&& 
@@ -46,20 +64,22 @@ namespace liao::PrimedDB
 	}
 	int UserManager::userCount() const
 	{
+		ReadLock readLock(m_mutex);
 		return m_allUsers.size();
 	}
 	int UserManager::sessionCount() const
 	{
+		ReadLock readLock(m_mutex);
 		return m_took.size();
 	}
 	UserPtr UserManager::create(std::string& name, std::string& password,UserLevel level)
 	{
-		if (exist(name)||InvalidName(name)||!IsSavePassword(password))
+		if (exist(name)||InvalidName(name)||!isSafePassword(password))
 		{
 			return nullptr;
 		}
 		string construName = name;
-		shared_ptr<User> ptr(new User(construName, password, level));
+		UserPtr ptr(new User(construName, password, level));
 		{
 			WriteLock lock(m_mutex);
 			m_allUsers.emplace(name, ptr);
@@ -85,6 +105,7 @@ namespace liao::PrimedDB
 		auto iter = userInSession(who);
 		if (iter != m_took.end())
 		{
+			WriteLock lock(m_mutex);
 			m_took.erase(iter);
 		}
 		if (exist(who)&&levelQualified(executor.getLevel(),who))
@@ -98,11 +119,13 @@ namespace liao::PrimedDB
 	bool UserManager::allowLogin(const std::string& name, const std::string& password)
 	{
 		shared_ptr<User> user;
+		if (!exist(name))
+			return false;
 		{
             ReadLock lock(m_mutex);
 			user = m_allUsers[name];
 		} 
-		return exist(name) && !isUserInSession(name) && user->validate(User::PassWordHash(password));
+		return !isUserInSession(name) && user->validate(User::PassWordHash(password));
 	}
 	bool UserManager::login(const std::string& name, const std::string& password)
 	{
@@ -124,6 +147,18 @@ namespace liao::PrimedDB
 			return true;
 		}
 		return false;
+	}
+	void UserManager::save()
+	{
+		ofstream file(Configuration::UserInforFile,ios::trunc);
+		WriteLock lock(m_mutex);
+		{
+			for (auto& user : m_allUsers)
+			{
+				file << user.second->toString() << "\n";
+			}
+		}
+		file.close();
 	}
 	bool UserManager::forceLogout(const User& executor, const std::string& who)
 	{

@@ -3,15 +3,11 @@ USESTD;
 namespace liao::PrimedDB
 {
 	Session::Session()
-		:m_id(StaticFunc::GetUniqueId()),m_user(nullptr),m_flag(false),m_ip("")
-	{
-		execute();
-	}
+		:m_id(StaticFunc::GetUniqueId(Math::HashType::MD5)),m_user(nullptr),m_flag(false),m_ip("")
+	{}
 	Session::Session(const UserPtr& user)
-		:m_id(StaticFunc::GetUniqueId()),m_user(user), m_flag(false),m_ip("")
-	{
-		execute();
-	}
+		:m_id(StaticFunc::GetUniqueId(Math::HashType::MD5)),m_user(user), m_flag(false),m_ip("")
+	{}
 	bool Session::isEmpty()const
 	{
 		return m_user == nullptr;
@@ -20,14 +16,18 @@ namespace liao::PrimedDB
 	{
 		while (!m_flag)
 		{
+			if (m_user == nullptr)
+			{
+				cout << "Please login";
+				while (1);
+			}
+			
 			cout<<"Session "<<m_id<<" is running..."<<endl;
 		}
 	}
 	Session::Session(Session&& other)
 		:m_id(std::move(other.m_id)),m_user(std::move(other.m_user)),m_flag(other.m_flag.exchange(true)),m_ip(std::move(other.m_ip)),m_thread(std::move(other.m_thread))
-	{
-		
-	}
+	{}
 	Session& Session::operator=(Session&& other)
 	{
 		m_id = std::move(other.m_id);

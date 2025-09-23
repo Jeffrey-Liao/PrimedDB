@@ -147,10 +147,12 @@
     <ClCompile Include="Inactive.cpp" />
     <ClCompile Include="source\ClassInforDef.cpp" />
     <ClCompile Include="source\ColumnDef.cpp" />
+    <ClCompile Include="source\DataCache.cpp" />
     <ClCompile Include="source\ErrorManagerDef.cpp" />
     <ClCompile Include="source\GlobalDef.cpp" />
     <ClCompile Include="source\HashContainerDef.cpp" />
     <ClCompile Include="source\LogDef.cpp" />
+    <ClCompile Include="source\PageDef.cpp" />
     <ClCompile Include="source\PrimeNumberConvertDef.cpp" />
     <ClCompile Include="source\SchemaDef.cpp" />
     <ClCompile Include="source\SessionDef.cpp" />
@@ -164,12 +166,15 @@
   <ItemGroup>
     <ClInclude Include="header\ClassInfor.h" />
     <ClInclude Include="header\Column.h" />
+    <ClInclude Include="header\ControlManager.h" />
+    <ClInclude Include="header\DataCache.h" />
     <ClInclude Include="header\Defs.h" />
     <ClInclude Include="header\DiskManager.h" />
     <ClInclude Include="header\ErrorManager.h" />
     <ClInclude Include="header\Global.h" />
     <ClInclude Include="header\HashContainer.h" />
     <ClInclude Include="header\Log.h" />
+    <ClInclude Include="header\Page.h" />
     <ClInclude Include="header\PrimeNumberConvert.h" />
     <ClInclude Include="header\Schema.h" />
     <ClInclude Include="header\Session.h" />

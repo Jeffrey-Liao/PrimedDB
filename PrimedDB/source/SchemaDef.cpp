@@ -1,12 +1,9 @@
 #include "Schema.h"
 #include "User.h"
-
+#include "UserManager.h"
+USESTD;
 namespace liao::PrimedDB
 {
-	const std::string& Schema::getId() const
-	{
-		return m_id;
-	}
 	const std::string& Schema::getName() const
 	{
 		return m_name;
@@ -41,18 +38,18 @@ namespace liao::PrimedDB
 		}
 		return m_tables.end();
 	}
-	const Table& Schema::getTable(const std::string& name)const
+	const TablePtr Schema::getTable(const std::string& name)const
 	{
 		auto iter = find(name);
 		if (iter != m_tables.end())
 		{
-			return **iter;
+			return *iter;
 		}
-		return Table::GetNullRef();
+		return nullptr;
 	}
 	void Schema::addTable(std::string& name, User& owner, UserLevel permission)
 	{
-		m_tables.emplace_back(std::make_shared<Table>(name, owner, permission));
+		m_tables.emplace_back(std::make_shared<Table>(owner, name, permission));
 	}
 	void Schema::removeTable(std::string& name, User& user)
 	{
@@ -64,15 +61,53 @@ namespace liao::PrimedDB
 				m_tables.erase(iter);
 		}
 	}
-	Table& Schema::getTable(const std::string& name, const User& user)
+	TablePtr Schema::getTable(const std::string& name, const User& user)
 	{
 		auto iter = find(name);
         if (iter != m_tables.end())
 		{
 			UserLevel requiredLevel = (*iter)->getPermission();
 			if (user.qualified(requiredLevel))
-				return **iter;
+				return *iter;
 		}
-		return Table::GetNullRef();
+		return nullptr;
 	}
+	void Schema::constructTable(const std::string& fileLine)
+	{
+		vector<string> tokens;
+        StaticFunc::Split(tokens, fileLine, ':');
+		UserPtr ptr = UserManager::getInstance().get(tokens[0]);
+		User& ref = *ptr;
+		m_tables.emplace_back(make_shared<Table>(Table(ref, tokens[1])));
+	}
+	void Schema::construct(const std::string& fileLine)
+	{
+		vector<string> tokens;
+        StaticFunc::Split(tokens, fileLine, '|');
+		WriteLock lock(m_mutex);
+        m_name = tokens[0];
+		string tableInfor = std::move(tokens[1]);
+		tokens.clear();
+        StaticFunc::Split(tokens, tableInfor, ',');
+		for (auto& token : tokens)
+		{
+			constructTable(token);
+		}
+	}
+	std::string Schema::toString() const
+	{
+		std::ostringstream oss;
+		ReadLock lock(m_mutex);
+		oss << format("{}|", m_name);
+		for (int n = 0; n < m_tables.size(); ++n)
+		{
+			if (n + 1 < m_tables.size())
+			{
+				oss << ",";
+			}
+			oss <<m_tables[n]->getOwner().getName()<<":"<< m_tables[n]->getName();
+		}
+		return oss.str();
+	}
+
 }

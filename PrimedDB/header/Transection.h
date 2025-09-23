@@ -1,5 +1,7 @@
 #pragma once
 #include "Global.h"
+#include "User.h"
+
 namespace liao::PrimedDB
 {
 	class Session;
@@ -30,7 +32,7 @@ namespace liao::PrimedDB
 		}
 		std::string toString()
 		{
-			
+			return std::format("{} {}",m_id,m_operator.getId());
 		}
 	};
 }

@@ -2,7 +2,6 @@
 #include "Session.h"
 namespace liao::PrimedDB
 {
-	using UserPtr = std::shared_ptr<User>;
 	class Session;
 	class UserManager:public Singleton<UserManager>
 	{
@@ -15,7 +14,9 @@ namespace liao::PrimedDB
 		bool allowControl(UserLevel operatorLevel, const std::string& name);
 		bool levelQualified(UserLevel level, const std::string& name);
 		static bool InvalidName(std::string& name);
-		static bool IsSavePassword(std::string& password);
+		static bool isSafePassword(std::string& password);
+		void save();
+		UserManager();
 	public:
 
 		bool exist(const std::string& name) const;
