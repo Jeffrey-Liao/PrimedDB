@@ -4,23 +4,24 @@ namespace liao::PrimedDB
 {
 	class Table;
 
-	class Column:public NullRefProvider<Column>
+	class Column
 	{
 		std::string m_columnName;
 		short int m_byteSize;
 		Table& m_owner;
-		mutable std::shared_mutex m_mutex;
 		ColumnType m_type;
-		Column* ref;
-		std::string m_id;
+		mutable std::shared_mutex m_mutex;
+
+		void constructFromFileLine(const std::string& line);
 	public:
-		Column();
 		Column(std::string& name, short int size, Table& owner);
-		Column(const std::string&,Table&);
+		Column(Table&, const std::string&);
 		Column(const Column&);
 		Column(Column&&) noexcept;
 		void rename(std::string&);
-		void resize(short int);
+		void resize(unsigned short int);
+		void setType(ColumnType);
+		ColumnType getType() const;
 		const std::string& getName() const;
         short int getByteSize() const;
         const Table& getOwner() const;
@@ -29,4 +30,5 @@ namespace liao::PrimedDB
 		Column& operator=(const Column&);
         ~Column() = default;
 	};
+	using ColumnPtr = std::shared_ptr<Column>;
 }

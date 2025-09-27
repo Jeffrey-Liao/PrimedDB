@@ -113,7 +113,7 @@ namespace liao::Math
 		ReadLock lock(m_mutex);
 		return m_containsHash&&!m_hashHex.empty();
 	}
-	const vector<unsigned int>& HashContainer::getHashNumbers() const
+	const vector<size_t>& HashContainer::getHashNumbers() const
 	{
 		ReadLock lock(m_mutex);
 		return m_hashNumbers;
@@ -127,9 +127,5 @@ namespace liao::Math
 	{
 		ReadLock lock(m_mutex);
 		return m_hashHex;
-	}
-	std::string&& HashContainer::moveHashHex()
-	{
-		return std::move(m_hashHex);
 	}
 }

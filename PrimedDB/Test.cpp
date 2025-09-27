@@ -3,6 +3,7 @@
 #include "TimeStamp.h"
 #include <iostream>
 USELIAO;
+USELIAOUTIL;
 USESTD;
 USELIAOMATH;
 USELIAOPRIMED;
@@ -16,7 +17,7 @@ static ShareMutex mutexMain;
 int main()
 {
 	Util::TimeStamp timeStamp;
-	auto time = Util::TimeStamp::now();
+	auto time = Util::TimeStamp::SystemTime();
     timeStamp.reset(time);
 	cout<<timeStamp.getString()<<endl;
 	cout << timeStamp.get(Util::TimeType::Year) << endl;

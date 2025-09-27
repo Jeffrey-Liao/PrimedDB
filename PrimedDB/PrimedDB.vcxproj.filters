@@ -40,6 +40,12 @@
     <Filter Include="Util\source">
       <UniqueIdentifier>{2d08dbc7-c074-4ffa-99bd-0941e04314ec}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Compiler">
+      <UniqueIdentifier>{e48d316f-9444-4c6d-8c4b-47a675c3c383}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UI">
+      <UniqueIdentifier>{42ccf9a3-f867-48b2-89cf-ca29267c69f0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\LogDef.cpp">
@@ -57,16 +63,10 @@
     <ClCompile Include="source\PrimeNumberConvertDef.cpp">
       <Filter>Primed\Source</Filter>
     </ClCompile>
-    <ClCompile Include="Memory.cpp">
-      <Filter>Storage\Source</Filter>
-    </ClCompile>
     <ClCompile Include="Inactive.cpp">
       <Filter>Test</Filter>
     </ClCompile>
     <ClCompile Include="source\ColumnDef.cpp">
-      <Filter>Storage\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="source\GlobalDef.cpp">
       <Filter>Storage\Source</Filter>
     </ClCompile>
     <ClCompile Include="source\TimeStampDef.cpp">
@@ -86,6 +86,27 @@
     </ClCompile>
     <ClCompile Include="source\SessionDef.cpp">
       <Filter>Storage\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\SchemaDef.cpp">
+      <Filter>Storage\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\ErrorManagerDef.cpp">
+      <Filter>Util\source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\PageDef.cpp">
+      <Filter>Storage\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\DataCache.cpp">
+      <Filter>Storage\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\GlobalDef.cpp">
+      <Filter>Util\source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\SettingDef.cpp">
+      <Filter>Util\source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\PrimizeDef.cpp">
+      <Filter>Primed\Source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -110,12 +131,6 @@
     <ClInclude Include="header\Schema.h">
       <Filter>Storage\Header</Filter>
     </ClInclude>
-    <ClInclude Include="Memory.h">
-      <Filter>Storage\Header</Filter>
-    </ClInclude>
-    <ClInclude Include="header\Global.h">
-      <Filter>Storage\Header</Filter>
-    </ClInclude>
     <ClInclude Include="header\User.h">
       <Filter>Storage\Header</Filter>
     </ClInclude>
@@ -133,6 +148,39 @@
     </ClInclude>
     <ClInclude Include="header\Session.h">
       <Filter>Storage\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\TableManager.h">
+      <Filter>Storage\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\ErrorManager.h">
+      <Filter>Util\header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\Transection.h">
+      <Filter>Storage\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\DiskManager.h">
+      <Filter>Storage\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\ControlManager.h">
+      <Filter>Storage\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\DataCache.h">
+      <Filter>Storage\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\Page.h">
+      <Filter>Storage\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="SyntaxChecker.h">
+      <Filter>Compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="header\Global.h">
+      <Filter>Util\header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\Setting.h">
+      <Filter>Util\header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\Primize.h">
+      <Filter>Primed\Header</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

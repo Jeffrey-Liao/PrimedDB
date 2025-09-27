@@ -10,10 +10,12 @@ namespace liao::Math
             mpz_ui_pow_ui(candidate.get_mpz_t(), 2, digits - 1);  // 2^(target_bits-1)
         }
         candidate *= number;
+        //如果数字为奇数，则加1
         if (mpz_even_p(candidate.get_mpz_t())) {
-            candidate++;
+            ++candidate;
         }
         mpz_nextprime(candidate.get_mpz_t(), candidate.get_mpz_t());
+        //如果转化出来的数据小于给定位数。
         while (mpz_sizeinbase(candidate.get_mpz_t(), 2) < digits) {
             candidate += 2;
             mpz_nextprime(candidate.get_mpz_t(), candidate.get_mpz_t());
@@ -40,7 +42,7 @@ namespace liao::Math
         }
         number *= enlarge;
         if (mpz_even_p(number.get_mpz_t())) {
-            number++;
+            ++number;
         }
         mpz_nextprime(number.get_mpz_t(), number.get_mpz_t());
         while (mpz_sizeinbase(number.get_mpz_t(), 2) < digits) {
@@ -54,4 +56,24 @@ namespace liao::Math
         int result = mpz_probab_prime_p(number.get_mpz_t(), reps);
         return (result == 2);
 	}
+    static constexpr bool isLittleEndian()
+    {
+        union
+        {
+            uint32_t i;
+            uint8_t c[4];
+        } test = { 0x01020304 };
+        return test.c[0] == 0x04; // 小端序：最低有效字节在最低地址
+    }
+    static constexpr bool isBigEndian()
+    {
+        union
+        {
+            uint32_t i;
+            uint8_t c[4];
+        } test = { 0x01020304 };
+
+        return test.c[0] == 0x01; // 大端序：最高有效字节在最低地址
+    }
+
 }

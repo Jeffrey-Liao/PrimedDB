@@ -4,12 +4,59 @@ USESTD;
 namespace liao::PrimedDB
 {
 	Table::Table()
-		:m_id("null"),m_name("null"),m_permission(UserLevel::None),m_owner(User::GetNullRef()),m_recordNumber(-1)
+		:m_name("null"),m_permission(UserLevel::None),m_owner(User::GetNullRef())
 	{}
-	Table::Table(std::string& name, User& owner, UserLevel permission)
-		:m_id(StaticFunc::GetUniqueId()),m_owner(owner),m_permission(permission)
+	Table::Table(User& owner, std::string& name, UserLevel permission)
+		:m_owner(owner),m_permission(permission)
 	{
+		createTableDefFile();
 		rename(name);
+	}
+	void Table::createTableDefFile()
+	{
+		ofstream file(m_name + ".def",ios::app);
+		if (file.is_open())
+		{
+			file.close();
+		}
+	}
+	bool Table::isEmpty()const
+	{
+		return m_recordNumber == 0;
+	}
+	void Table::constructFromFile()
+	{
+		ifstream file(getName() + ".def");
+		if (file.fail())
+		{
+			createTableDefFile();
+		}
+		else
+		{
+			{
+				WriteLock lock(m_mutex);
+				file >> m_name;
+			}
+			vector<string> lines;
+			string cache;
+			cache.reserve(TABLE_NAME_LEN + USER_NAME_LEN + sizeof(UserLevel) + sizeof(size_t));
+            while (getline(file, cache))
+            {
+                lines.emplace_back(cache);
+            }
+			WriteLock lock(m_mutex);
+			for (auto& line:lines)
+			{
+				m_columns.emplace_back(new Column(*this,line));
+			}
+		}
+		file.close();
+	}
+
+	Table::Table(User& owner, const std::string& fileLine)
+		:m_owner(owner)
+	{
+		constructFromFile();
 	}
 	const std::string& Table::getName() const
 	{
@@ -19,21 +66,29 @@ namespace liao::PrimedDB
 	void Table::addColumn(std::string& name, short int byteSize)
 	{
 		WriteLock lock(m_mutex);
-		Column newColumn(name, byteSize, *this);
-		m_columns.emplace_back(newColumn);
+		m_columns.emplace_back(new Column(name, byteSize, *this));
 	}
 	void Table::rename(std::string& name)
 	{
-		WriteLock lock(m_mutex);
-		if (name != "null")
+
+		if (name != "null"&&!name.empty())
+		{
+			WriteLock lock(m_mutex);
 			m_name = std::move(name);
+		}
+	}
+	bool Table::exist(const string& name) const
+	{
+		auto iter = findColumn(name);
+		ReadLock lock(m_mutex);
+		return iter != m_columns.end();
 	}
 	auto Table::findColumn(const std::string& name)
 	{
 		ReadLock lock(m_mutex);
 		for (auto iter = m_columns.begin(); iter != m_columns.end(); ++iter)
 		{
-			if (iter->getName() == name)
+			if ((*iter)->getName() == name)
 			{
 				return iter;
 			}
@@ -45,7 +100,7 @@ namespace liao::PrimedDB
 		ReadLock lock(m_mutex);
 		for (auto iter = m_columns.begin(); iter != m_columns.end(); ++iter)
 		{
-			if (iter->getName() == name)
+			if ((*iter)->getName() == name)
 			{
 				return iter;
 			}
@@ -61,11 +116,7 @@ namespace liao::PrimedDB
             m_columns.erase(iter);
         }
 	}
-	
-	const string& Table::getId() const
-	{
-		return m_id;
-	}
+
 	void Table::removeColumn(const std::string& name)
 	{
 		auto iter = findColumn(name);
@@ -78,14 +129,14 @@ namespace liao::PrimedDB
 	void Table::resizeColumn(const std::string& name, short int byteSize)
 	{
 		auto iter = findColumn(name);
-		Column& column = *(iter);
+		auto& column = *(iter);
 		ReadLock lock(m_mutex);
 		if (iter != m_columns.end())
 		{
-			column.resize(byteSize);
+			column->resize(byteSize);
 		}
 	}
-	const Column& Table::getColumn(const std::string& name) const
+	const ColumnPtr Table::getColumn(const std::string& name) const
 	{
 		auto iter = findColumn(name);
 		ReadLock lock(m_mutex);
@@ -93,14 +144,14 @@ namespace liao::PrimedDB
 		{
 			return *iter;
 		}
-		return Column::GetNullRef();
+		return nullptr;
 	}
-	const std::vector<Column>& Table::getColumns() const
+	const std::vector<ColumnPtr>& Table::getColumns() const
 	{
 		ReadLock lock(m_mutex);
 		return m_columns;
 	}
-	int Table::getRecordNumber() const
+	size_t Table::getRecordNumber() const
 	{
 		ReadLock lock(m_mutex);
 		return m_recordNumber;
@@ -120,6 +171,13 @@ namespace liao::PrimedDB
 		WriteLock lock(m_mutex);
 		m_columns.clear();
 	}
+	void Table::updateFile()
+	{
+		ofstream file(m_name + ".def",ios::trunc);
+		if (!file.fail()&&file.is_open())
+			file << toString();
+		file.close();
+	}
 	int Table::size()const
 	{
 		return m_columns.size();
@@ -128,20 +186,23 @@ namespace liao::PrimedDB
 	{
 		std::ostringstream oss;
         ReadLock lock(m_mutex);
-		oss<<format("id:{},name:{},permission:{},owner:{},size:{}",m_id, m_name,static_cast<int>(m_permission),m_owner.getName(), this->size());
+		oss<<format("{}:{}:{}:{}",m_owner.getName(), m_name,m_permission,this->m_recordNumber);
 		for (int n =0;n<this->size();++n)
 		{
 			if (n+1<size())
 			{
-				oss << ",";
+				oss << "\n";
 			}
-			oss<<m_columns[n].toString();
+			oss<<m_columns[n]->toString();
 		}
         return oss.str();
 	}
+	UserLevel Table::getPermission() const
+	{
+		return m_permission;
+	}
 	Table& Table::operator=(const Table& object)
 	{
-        m_id = object.m_id;
         m_name = object.m_name;
         m_permission = object.m_permission;
         m_owner = object.m_owner;

@@ -17,21 +17,21 @@ namespace liao::Math
 	};
 	enum class HashType
 	{
-		MD5,
-		SHA256,
-		SHA512,
-		SHA3_256,
-		SHA3_512
+		MD5 = 32,
+		SHA256 = 64,
+		SHA512 = 128,
+		SHA3_256 = 640,
+		SHA3_512 = 1280
 	};
 	class HashContainer
 	{
-		unsigned int LENGTH = CryptoPP::SHA3_512::DIGESTSIZE;
+		size_t LENGTH = CryptoPP::SHA3_512::DIGESTSIZE;
 
 		mutable ShareMutex m_mutex;
 		CryptoPP::byte m_hashByte[CryptoPP::SHA3_512::DIGESTSIZE];
 		bool m_containsHash;
 		std::string m_hashHex;
-		std::vector<unsigned int> m_hashNumbers;
+		std::vector<size_t> m_hashNumbers;
 
 
 		DYNAMICCON(Concept_HashTypeName)
@@ -58,9 +58,8 @@ namespace liao::Math
 		HashContainer(const HashContainer& obj);
 		HashContainer(HashContainer&& move) noexcept;
 		bool contains() const;
-		const std::vector<unsigned int>& getHashNumbers() const;
+		const std::vector<size_t>& getHashNumbers() const;
 		const CryptoPP::byte* getHashByte() const;
 		const std::string& getHashHex() const;
-		std::string&& moveHashHex();
 	};
 }

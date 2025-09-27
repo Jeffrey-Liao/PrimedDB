@@ -3,6 +3,8 @@
 #include <iostream>
 #include <ctime>
 #include <sstream>
+
+#include "Setting.h"
 using namespace std;
 namespace liao::Infor
 {
@@ -142,10 +144,7 @@ namespace liao::Infor
 			obj.cache.clear();
 		}
 	}
-	Log::LogStream& Log::LogStream::openToFile(string&& name)
-	{
-		return openToFile(name);
-	}
+
 	Log::LogStream& Log::LogStream::openToFile(const string& name)
 	{
 		if (name != "")
@@ -158,7 +157,18 @@ namespace liao::Infor
 		}
 		return *this;
 	}
-
+	Log::LogStream& Log::LogStream::openToFile(const string_view name)
+	{
+		if (!name.empty())
+		{
+			auto curPath = fs::current_path() / Util::Setting::getInstance().getLogDirectory();
+			curPath.append(name);
+			if (logFile.is_open())
+				logFile.close();
+			logFile.open(curPath, ios::app);
+		}
+		return *this;
+	}
 
 	string Log::LogStream::getLabel(LogType type) const
 	{
@@ -168,6 +178,8 @@ namespace liao::Infor
 			return "Debug";
 		else if (type == LogType::Message)
 			return "Message";
+		else if (type == LogType::Warning)
+			return "Warning";
 		else
 			return "";
 	}
@@ -208,11 +220,6 @@ namespace liao::Infor
 	Log::LogStream& Log::LogStream::remove(string&& message)
 	{
 		return remove(message);
-	}
-
-	Log::LogStream& Log::LogStream::operator<<(std::string&& message)
-	{
-		return append(message);
 	}
 	Log::LogStream& Log::LogStream::operator<<(const std::string& message)
 	{
