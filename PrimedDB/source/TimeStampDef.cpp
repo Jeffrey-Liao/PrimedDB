@@ -3,14 +3,17 @@ USESTD;
 USECRPT;
 namespace liao::Util
 {
-    TimeStamp::TimePoint TimeStamp::now()
+    TimeStamp::TimePoint TimeStamp::SystemTime()
     {
         auto timeZone = chrono::current_zone();
         auto now = SystemClock::now();
         const auto info = timeZone->get_info(now);
         const auto offset_seconds = info.offset;
-
         return now + offset_seconds;
+    }
+    TimeStamp TimeStamp::Now()
+    {
+        return TimeStamp(SystemTime());
     }
     void TimeStamp::setTime(TimePoint& time)
     {

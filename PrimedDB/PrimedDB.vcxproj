@@ -74,8 +74,8 @@
     <IncludePath>D:\Code\C++\PrimedDB\PrimedDB\externalLib\cryptopp890;D:\Code\C++\PrimedDB\PrimedDB\header;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\src\vcpkg\installed\x64-windows\include\asio\windows;D:\Code\C++\PrimedDB\PrimedDB\externalLib\cryptopp890;D:\Code\C++\PrimedDB\PrimedDB\header;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\Code\C++\PrimedDB\PrimedDB\externalLib\cryptopp890\x64\Output\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\Code\Library\boost_1_89_0\boost\asio;C:\src\vcpkg\installed\x64-windows\include\asio\windows;D:\Code\C++\PrimedDB\PrimedDB\externalLib\cryptopp890;D:\Code\C++\PrimedDB\PrimedDB\header;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\Code\Library\boost_1_89_0\lib64-msvc-14.3;D:\Code\C++\PrimedDB\PrimedDB\externalLib\cryptopp890\x64\Output\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -154,8 +154,10 @@
     <ClCompile Include="source\LogDef.cpp" />
     <ClCompile Include="source\PageDef.cpp" />
     <ClCompile Include="source\PrimeNumberConvertDef.cpp" />
+    <ClCompile Include="source\PrimizeDef.cpp" />
     <ClCompile Include="source\SchemaDef.cpp" />
     <ClCompile Include="source\SessionDef.cpp" />
+    <ClCompile Include="source\SettingDef.cpp" />
     <ClCompile Include="source\StructFileDef.cpp" />
     <ClCompile Include="source\TableDef.cpp" />
     <ClCompile Include="source\TimeStampDef.cpp" />
@@ -176,8 +178,10 @@
     <ClInclude Include="header\Log.h" />
     <ClInclude Include="header\Page.h" />
     <ClInclude Include="header\PrimeNumberConvert.h" />
+    <ClInclude Include="header\Primize.h" />
     <ClInclude Include="header\Schema.h" />
     <ClInclude Include="header\Session.h" />
+    <ClInclude Include="header\Setting.h" />
     <ClInclude Include="header\StructFile.h" />
     <ClInclude Include="header\Table.h" />
     <ClInclude Include="header\TableManager.h" />
@@ -185,6 +189,7 @@
     <ClInclude Include="header\Transection.h" />
     <ClInclude Include="header\User.h" />
     <ClInclude Include="header\UserManager.h" />
+    <ClInclude Include="SyntaxChecker.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

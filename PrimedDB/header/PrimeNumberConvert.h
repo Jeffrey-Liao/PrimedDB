@@ -11,4 +11,8 @@ namespace liao::Math
 		static void generate_big(GmpBigNumber& number, unsigned int digits = 0);
 		static bool is_prime(const GmpBigNumber& number);
 	};
+    static constexpr bool isLittleEndian();
+
+    static constexpr bool isBigEndian();
+
 }

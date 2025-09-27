@@ -12,6 +12,7 @@ namespace liao::Infor
 	enum class LogType
 	{
 		None,
+		Warning,
 		Error,
 		Debug,
 		Message
@@ -48,6 +49,8 @@ namespace liao::Infor
 			LogStream& openToFile(string&& name);
 
 			LogStream& openToFile(const string& name);
+
+			LogStream& openToFile(std::string_view name);
 
 			LogStream& operator()(ClassInfor& error);
 
