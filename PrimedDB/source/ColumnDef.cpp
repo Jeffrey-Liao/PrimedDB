@@ -65,7 +65,7 @@ namespace liao::PrimedDB {
     {
         return m_columnName;
     }
-    const TablePtr Column::getOwner() const
+    Table& Column::getOwner() const
     {
         ReadLock lock(m_mutex);
         return m_owner;
@@ -74,7 +74,7 @@ namespace liao::PrimedDB {
     {
         std::ostringstream oss;
         ReadLock lock(m_mutex);
-        oss << format("{}:{}:{}",m_columnName,m_type,m_byteSize);
+        oss << format("{}:{}:{}",m_columnName,static_cast<int>(m_type),m_byteSize);
         return oss.str();
     }
     Column& Column::operator=(const Column& object)

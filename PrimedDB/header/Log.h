@@ -13,9 +13,10 @@ namespace liao::Infor
 	{
 		None,
 		Warning,
+		Fatal,
 		Error,
 		Debug,
-		Message
+		Info
 	};
 	class Log
 	{
@@ -25,9 +26,10 @@ namespace liao::Infor
 	private:
 		class LogStream
 		{
-			std::string cache;
+			std::string m_cache;
 			const LogType TYPE;
-			std::ofstream logFile;
+			std::ofstream m_logFile;
+			char m_spliter = '\t';
 			static std::mutex LogStreamMutex;
 		private:
 			string getLabel(LogType) const;
@@ -40,29 +42,25 @@ namespace liao::Infor
 
 			LogStream& append(string&& message);
 
+			LogStream& change(const char spliter);
+
 			LogStream& remove(const string& message);
 
 			LogStream& remove(string&& message);
 
-			LogType getType() const;
-
-			LogStream& openToFile(string&& name);
-
 			LogStream& openToFile(const string& name);
-
-			LogStream& openToFile(std::string_view name);
 
 			LogStream& operator()(ClassInfor& error);
 
 			LogStream& operator()(const char*);
-
-			LogStream& operator<<(std::string&&);
 
 			LogStream& operator<<(const std::string&);
 
 			friend void Log::LogEndl(LogStream& obj);
 
 			void operator<<(void(*p)(LogStream&));
+
+			LogStream& Get();
 
 			~LogStream();
 		};

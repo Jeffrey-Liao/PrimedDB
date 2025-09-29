@@ -133,39 +133,31 @@ namespace liao::Infor
 	{
 		return LogStream(type);
 	}
-
+	void write(std::ofstream&& file, string&& message)
+	{
+		if (file.is_open())
+		{
+			file << message << endl;
+			file.close();
+		}
+	}
 	void Log::LogEndl(LogStream& obj)
 	{
-		cout << obj.cache << endl;
-		if (obj.logFile.is_open())
-		{
-			std::lock_guard<std::mutex> lock(obj.LogStreamMutex);
-			obj.logFile << obj.cache << endl;
-			obj.cache.clear();
-		}
+		cout << obj.m_cache << endl;
+		auto future = std::async(std::launch::async, write, std::move(obj.m_logFile), std::move(obj.m_cache));
+		obj.m_cache.clear();
+		obj.m_logFile.close();
 	}
 
 	Log::LogStream& Log::LogStream::openToFile(const string& name)
 	{
 		if (name != "")
 		{
-			auto curPath = fs::current_path() / LOG_FOLDER;
+			auto curPath = fs::current_path();
 			curPath.append(name);
-			if(logFile.is_open())
-				logFile.close();
-			logFile.open(curPath, ios::app);
-		}
-		return *this;
-	}
-	Log::LogStream& Log::LogStream::openToFile(const string_view name)
-	{
-		if (!name.empty())
-		{
-			auto curPath = fs::current_path() / Util::Setting::getInstance().getLogDirectory();
-			curPath.append(name);
-			if (logFile.is_open())
-				logFile.close();
-			logFile.open(curPath, ios::app);
+			if(m_logFile.is_open())
+				m_logFile.close();
+			m_logFile.open(curPath, ios::app);
 		}
 		return *this;
 	}
@@ -176,7 +168,7 @@ namespace liao::Infor
 			return "Error";
 		else if (type == LogType::Debug)
 			return "Debug";
-		else if (type == LogType::Message)
+		else if (type == LogType::Info)
 			return "Message";
 		else if (type == LogType::Warning)
 			return "Warning";
@@ -185,20 +177,20 @@ namespace liao::Infor
 	}
 
 	Log::LogStream::LogStream(LogType type)
-		:TYPE(type), cache(format("{} - [{}]:", GetTime(), getLabel(type)))
+		:TYPE(type), m_cache(format("{} - [{}]:", GetTime(), getLabel(type)))
 	{}
 	Log::LogStream::LogStream(const string& message)
-		:TYPE(LogType::None), cache(message)
+		:TYPE(LogType::None), m_cache(message)
 	{}
 	Log::LogStream& Log::LogStream::operator()(ClassInfor& error)
 	{
-		cache += format(" in {} that", error.CompleteInfor());
+		m_cache += format(" in {} that", error.CompleteInfor());
 		return *this;
 	}
 	Log::LogStream& Log::LogStream::append(const string& message)
 	{
-		cache += " ";
-		cache += message;
+		m_cache += " ";
+		m_cache += message;
 		return *this;
 	}
 
@@ -206,13 +198,27 @@ namespace liao::Infor
 	{
 		return append(message);
 	}
+	Log::LogStream& Log::LogStream::Get()
+	{
+		return *this;
+	}
+	Log::LogStream& Log::LogStream::change(const char spliter)
+	{
+		size_t pos = 0;
+		while ((pos=m_cache.find(m_spliter))!=m_cache.npos)
+		{
+			m_cache.replace(pos,1,1,spliter);
+		}
+		m_spliter = spliter;
+		return *this;
+	}
 
 	Log::LogStream& Log::LogStream::remove(const string& message)
 	{
-		auto subStringPos = cache.find(" "+message);
+		auto subStringPos = m_cache.find(" "+message);
 		if (!ClassInfor::SubStrNotFound(subStringPos))
 		{
-			cache.erase(subStringPos, message.length() + 1);
+			m_cache.erase(subStringPos, message.length() + 1);
 		}
 		return *this;
 	}
@@ -228,12 +234,8 @@ namespace liao::Infor
 	Log::LogStream& Log::LogStream::operator()(const char* classInfor)
 	{
 		ClassInfor error(classInfor);
-		cache += format("in {}that", error.CompleteInfor());
+		m_cache += format("in {}that", error.CompleteInfor());
 		return *this;
-	}
-	LogType Log::LogStream::getType() const
-	{
-		return TYPE;
 	}
 	void Log::LogStream::operator<<(void (*p)(LogStream&))
 	{
@@ -241,6 +243,6 @@ namespace liao::Infor
 	}
 	Log::LogStream::~LogStream()
 	{
-		logFile.close();
+		m_logFile.close();
 	}
 }

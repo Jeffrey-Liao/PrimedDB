@@ -46,6 +46,12 @@
     <Filter Include="UI">
       <UniqueIdentifier>{42ccf9a3-f867-48b2-89cf-ca29267c69f0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Test\TestHeader">
+      <UniqueIdentifier>{233cb0b9-dc1a-4c01-99e9-9d9ce59a32bb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Test\TestSource">
+      <UniqueIdentifier>{0ce14194-205e-45b9-a519-fcf1d93f5c0c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\LogDef.cpp">
@@ -54,7 +60,7 @@
     <ClCompile Include="source\ClassInforDef.cpp">
       <Filter>Infor\Source</Filter>
     </ClCompile>
-    <ClCompile Include="Test.cpp">
+    <ClCompile Include="TestMain.cpp">
       <Filter>Test</Filter>
     </ClCompile>
     <ClCompile Include="source\HashContainerDef.cpp">
@@ -107,6 +113,9 @@
     </ClCompile>
     <ClCompile Include="source\PrimizeDef.cpp">
       <Filter>Primed\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\test\ErrorManagerTestDef.cpp">
+      <Filter>Test\TestSource</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -181,6 +190,15 @@
     </ClInclude>
     <ClInclude Include="header\Primize.h">
       <Filter>Primed\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\Timer.h">
+      <Filter>Util\header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\test\ErrorManagerTest.h">
+      <Filter>Test\TestHeader</Filter>
+    </ClInclude>
+    <ClInclude Include="header\Singleton.h">
+      <Filter>Util\header</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

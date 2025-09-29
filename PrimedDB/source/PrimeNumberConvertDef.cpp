@@ -56,24 +56,5 @@ namespace liao::Math
         int result = mpz_probab_prime_p(number.get_mpz_t(), reps);
         return (result == 2);
 	}
-    static constexpr bool isLittleEndian()
-    {
-        union
-        {
-            uint32_t i;
-            uint8_t c[4];
-        } test = { 0x01020304 };
-        return test.c[0] == 0x04; // 小端序：最低有效字节在最低地址
-    }
-    static constexpr bool isBigEndian()
-    {
-        union
-        {
-            uint32_t i;
-            uint8_t c[4];
-        } test = { 0x01020304 };
-
-        return test.c[0] == 0x01; // 大端序：最高有效字节在最低地址
-    }
 
 }

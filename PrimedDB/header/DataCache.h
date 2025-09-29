@@ -1,5 +1,5 @@
 #pragma once
-#include "Global.h"
+#include "Page.h"
 
 namespace liao::PrimedDB
 {

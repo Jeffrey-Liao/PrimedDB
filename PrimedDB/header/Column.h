@@ -24,7 +24,7 @@ namespace liao::PrimedDB
 		ColumnType getType() const;
 		const std::string& getName() const;
         short int getByteSize() const;
-        const Table& getOwner() const;
+		Table& getOwner() const;
 		const std::string& getId() const;
 		std::string toString() const;
 		Column& operator=(const Column&);

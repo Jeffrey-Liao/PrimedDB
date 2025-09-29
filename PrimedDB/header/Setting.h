@@ -7,16 +7,17 @@ namespace liao::Util
 	constexpr const char* SETTING_FILE_NAME = "setting.ini";
 	class Setting:public Singleton<Setting>
 	{
+		INVITESINGLETON;
 		unsigned int m_enlargeSize;//the enlarge number for Primize Algorithm
 		unsigned int m_blockNumber;//the number of blocks
 		unsigned int m_blockSize;//the size of a block
 		unsigned int m_sessionNumber;//the number of sessions
 		unsigned int m_port;
 
-		UCharPtr m_dataDirectory;
-		UCharPtr m_compilerDirectory;
-		UCharPtr m_globalDirectory;
-		UCharPtr m_logDirectory;
+		std::string m_dataDirectory;
+		std::string m_compilerDirectory;
+		std::string m_globalDirectory;
+		std::string m_logDirectory = "/log/";
 
 
 		mutable ShareMutex m_mutex;
@@ -24,10 +25,9 @@ namespace liao::Util
 		//check existence of all directories
 		//check existence of critical files
 		//if one of them is missing, terminate the system.
-		void initialize();
+		Setting();
 		void read();
 		void write();
-		Setting();
 	public:
 		unsigned int getBlockNumber()const;
 		unsigned int getBlockSize()const;

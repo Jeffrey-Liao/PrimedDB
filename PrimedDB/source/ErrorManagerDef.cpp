@@ -12,78 +12,122 @@ namespace liao::Util
     {
         Infor::Log::Get()[Infor::LogType::Warning].openToFile(std::string("warning.log")) << error.m_name << " " << error.m_message << " " << error.m_errorTime.getString() << Infor::Log::LogEndl;
     }
-    static void MessageLog(Error& error)
+    static void InfoLog(Error& error)
     {
-        Infor::Log::Get()[Infor::LogType::Message].openToFile(std::string("message.log")) << error.m_name << " " << error.m_message << " " << error.m_errorTime.getString() << Infor::Log::LogEndl;
+        Infor::Log::Get()[Infor::LogType::Info].openToFile(std::string("Info.log")) << error.m_name << " " << error.m_message << " " << error.m_errorTime.getString() << Infor::Log::LogEndl;
     }
     Error::Error(ErrorLevel level, std::string& name, std::string& message)
-        :m_level(level),m_name(std::move(name)),m_message(std::move(message)),m_errorTime(TimeStamp::Now()), m_isHandled(false)
+        :m_level(level),m_name(std::move(name)),m_message(std::move(message)),m_errorTime(TimeStamp::Now())
     {
     }
-    ErrorManager::ErrorManager()
+    Error::Error(ErrorLevel, std::string_view name, std::string_view message)
+        :m_level(ErrorLevel::Info), m_name(name), m_message(message), m_errorTime(TimeStamp::Now())
     {
-        subscribe(ErrorLevel::Info, MessageLog);
+    }
+    bool Error::operator==(Error& error)
+    {
+        return error.m_level == m_level&&error.m_name== m_name;
+    }
+    void ErrorManager::publish()
+    {
+        unique_lock<mutex> lock(m_cvmutex);
+        while (1)
+        {
+            m_conditionVar.wait(lock, [&]()
+                {
+                    return m_reported||end;
+                });
+            while (!m_errors.empty())
+            {
+                {
+                    ReadLock lock(m_mutex);
+                    Error& error = m_errors.front();
+                    send(m_serviceByLevel[error.m_level], error);
+                    send(m_serviceByName[error.m_name], error);
+                    
+                }
+                {
+                    WriteLock lock(m_mutex);
+                    Error& error = m_errors.front();
+                    m_inProcess[error.m_name] = false;
+                    m_errors.pop();
+                }
+            }
+            m_reported = false;
+            if (end&&m_errors.empty())
+                break;
+        }
+    }
+    ErrorManager::ErrorManager()
+        :m_levelInProcess(4)
+    {
+        m_publishFuture = std::async(std::launch::async, [this]() 
+            { this->publish(); });
+        subscribe(ErrorLevel::Info, InfoLog);
         subscribe(ErrorLevel::Error, ErrorLog);
         subscribe(ErrorLevel::Fatal, ErrorLog);
         subscribe(ErrorLevel::Warning, WarningLog);
+        m_levelInProcess.resize(4);
     }
     void ErrorManager::send(std::vector<ErrorHandler>& services, Error& error)
     {
-        for (auto& service : services)
-            service(error);
-        error.m_isHandled = true;
+         vector<std::future<void>> handlerThreads;
+         for (auto& service : services)
+            handlerThreads.emplace_back(std::async(std::launch::async, [&service,&error]()
+                {
+                    service(error);
+                }));
+        for (auto& handlerThread : handlerThreads)
+            handlerThread.get();
     }
     void ErrorManager::send(ErrorHandler& service, Error& error)
     {
         service(error);
-        error.m_isHandled = true;
     }
-    void ErrorManager::publish(Error& error)
-    {
-        const bool isLevel = m_serviceByLevel.contains(error.m_level),
-        isName = m_serviceByName.contains(error.m_name);
-        if ((isLevel||isName)&&!error.m_isHandled)
-        {
-            if (isLevel)
-                send(m_serviceByLevel[error.m_level], error);
-            else
-                send(m_serviceByName[error.m_name],error);
-            m_errors.erase(std::find(m_errors.begin(), m_errors.end(), error));
-        }
-    }
+
+   
     void ErrorManager::set(ErrorLevel level, std::string& error, std::string& errorMessage)
     {
-        shared_ptr<Error> ptr = make_shared<Error>(level, error, errorMessage);
-        m_errors.emplace_back(ptr);
-        m_errorIndexByLevel[ptr->m_level].emplace_back(ptr);
-        m_errorIndexByName[ptr->m_name] = ptr;
-        publish(*ptr);
+        Error errorObject(level, error, errorMessage);
+        set(errorObject);
     }
+    void ErrorManager::set(ErrorLevel level, std::string_view error, std::string_view errorMessage)
+    {
+        Error errorObject(level, error, errorMessage);
+        set(errorObject);
+    }
+   
     void ErrorManager::set(Error& error)
     {
-        shared_ptr<Error> ptr = shared_ptr<Error>(new Error(error.m_level, error.m_name, error.m_message));
-        m_errors.emplace_back(ptr);
-        m_errorIndexByLevel[ptr->m_level].emplace_back(ptr);
-        m_errorIndexByName[ptr->m_name] = ptr;
-        publish(*ptr);
+        if (contains(error.m_name))
+            return;
+        {
+            WriteLock lock(m_mutex);
+            m_errors.push(error);
+            m_inProcess[error.m_name] = true;
+            m_reported = true;
+        }
+        m_conditionVar.notify_one();
     }
-    bool ErrorManager::exist(ErrorLevel level, std::string_view error) const
+    bool ErrorManager::contains(const std::string& error)const
     {
-        const string errorName = error.data();
-        return m_errorIndexByLevel.contains(level)&&m_errorIndexByName.contains(errorName)&& !m_errorIndexByName.at(errorName)->m_isHandled;
-    }
-    bool ErrorManager::exist(std::string_view error) const
-    {
-        const string errorName = error.data();
-        return m_errorIndexByName.contains(errorName) && !m_errorIndexByName.at(errorName)->m_isHandled;
+        ReadLock lock(m_mutex);
+        return m_inProcess.contains(error) && m_inProcess.at(error);
     }
     void ErrorManager::subscribe(ErrorLevel level, const ErrorHandler& handler)
     {
+        WriteLock lock(m_mutex);
         m_serviceByLevel[level].emplace_back(handler);
     }
     void ErrorManager::subscribe(std::string_view error, const ErrorHandler& handler)
     {
+        WriteLock lock(m_mutex);
         m_serviceByName[string(error.data())].emplace_back(handler);
+    }
+    ErrorManager::~ErrorManager()
+    {
+        end = true;
+        m_publishFuture.get();
     }
    
 }

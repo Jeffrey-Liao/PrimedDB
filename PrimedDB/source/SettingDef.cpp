@@ -4,18 +4,19 @@ USESTD;
 namespace liao::Util
 {
 	namespace fs = std::filesystem;
-	void Setting::initialize()
+	Setting::Setting()
 	{
 		fs::path programPath = fs::current_path();
 		fs::path compilerPath = programPath;
-        compilerPath.append(m_compilerDirectory.get());
+        compilerPath.append(m_compilerDirectory);
 		if (fs::exists(compilerPath)&&fs::exists("setting.cfg"))
 		{
 			
 		}
 		else
 		{
-			ErrorManager::getInstance().set(ErrorLevel::Fatal,)
+			string name = "FileNotExist",message = "Given target file name does not exist";
+			ErrorManager::Get().set(ErrorLevel::Fatal, name, message);
 		}
 	}
 	void Setting::read()
@@ -25,10 +26,6 @@ namespace liao::Util
 	void Setting::write()
 	{
 		
-	}
-	Setting::Setting()
-	{
-		initialize();
 	}
 	unsigned int Setting::getBlockNumber()const
 	{
@@ -75,18 +72,18 @@ namespace liao::Util
 
 	std::string_view Setting::getDataDirectory()const
 	{
-		return m_dataDirectory.get();
+		return m_dataDirectory.data();
 	}
 	std::string_view Setting::getCompilerDirectory()const
 	{
-		return m_compilerDirectory.get();
+		return m_compilerDirectory.data();
 	}
 	std::string_view Setting::getGlobalDirectory()const
 	{
-		return m_globalDirectory.get();
+		return m_globalDirectory.data();
 	}
 	std::string_view Setting::getLogDirectory()const
 	{
-		return m_logDirectory.get();
+		return m_logDirectory.data();
 	}
 }

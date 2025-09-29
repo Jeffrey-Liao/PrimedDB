@@ -49,7 +49,7 @@ namespace liao::PrimedDB
 	}
 	void Schema::addTable(std::string& name, User& owner, UserLevel permission)
 	{
-		m_tables.emplace_back(std::make_shared<Table>(owner, name, permission));
+		//m_tables.emplace_back(std::make_shared<Table>(owner, name, permission));
 	}
 	void Schema::removeTable(std::string& name, User& user)
 	{
@@ -76,7 +76,7 @@ namespace liao::PrimedDB
 	{
 		vector<string> tokens;
         StaticFunc::Split(tokens, fileLine, ':');
-		UserPtr ptr = UserManager::getInstance().get(tokens[0]);
+		UserPtr ptr = UserManager::Get().get(tokens[0]);
 		User& ref = *ptr;
 		m_tables.emplace_back(make_shared<Table>(Table(ref, tokens[1])));
 	}

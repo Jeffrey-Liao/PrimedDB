@@ -74,8 +74,9 @@
     <IncludePath>D:\Code\C++\PrimedDB\PrimedDB\externalLib\cryptopp890;D:\Code\C++\PrimedDB\PrimedDB\header;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>D:\Code\Library\boost_1_89_0\boost\asio;C:\src\vcpkg\installed\x64-windows\include\asio\windows;D:\Code\C++\PrimedDB\PrimedDB\externalLib\cryptopp890;D:\Code\C++\PrimedDB\PrimedDB\header;$(IncludePath)</IncludePath>
+    <IncludePath>D:\Code\Library\boost_1_89_0\boost\asio;D:\Code\C++\PrimedDB\PrimedDB\externalLib\cryptopp890;D:\Code\C++\PrimedDB\PrimedDB\header;D:\Code\C++\PrimedDB\PrimedDB\testheader;$(IncludePath)</IncludePath>
     <LibraryPath>D:\Code\Library\boost_1_89_0\lib64-msvc-14.3;D:\Code\C++\PrimedDB\PrimedDB\externalLib\cryptopp890\x64\Output\Release;$(LibraryPath)</LibraryPath>
+    <ExternalIncludePath>D:\Code\C++\PrimedDB\PrimedDB\testheader;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -160,10 +161,11 @@
     <ClCompile Include="source\SettingDef.cpp" />
     <ClCompile Include="source\StructFileDef.cpp" />
     <ClCompile Include="source\TableDef.cpp" />
+    <ClCompile Include="source\test\ErrorManagerTestDef.cpp" />
     <ClCompile Include="source\TimeStampDef.cpp" />
     <ClCompile Include="source\UserDef.cpp" />
     <ClCompile Include="source\UserManagerDef.cpp" />
-    <ClCompile Include="Test.cpp" />
+    <ClCompile Include="TestMain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="header\ClassInfor.h" />
@@ -182,9 +184,12 @@
     <ClInclude Include="header\Schema.h" />
     <ClInclude Include="header\Session.h" />
     <ClInclude Include="header\Setting.h" />
+    <ClInclude Include="header\Singleton.h" />
     <ClInclude Include="header\StructFile.h" />
     <ClInclude Include="header\Table.h" />
     <ClInclude Include="header\TableManager.h" />
+    <ClInclude Include="header\test\ErrorManagerTest.h" />
+    <ClInclude Include="header\Timer.h" />
     <ClInclude Include="header\TimeStamp.h" />
     <ClInclude Include="header\Transection.h" />
     <ClInclude Include="header\User.h" />
