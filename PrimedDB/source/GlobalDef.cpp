@@ -1,6 +1,8 @@
 #include "Global.h"
 #include <sstream>
 #include <random>
+
+#include "Setting.h"
 USESTD;
 USECRPT;
 namespace liao {
@@ -19,6 +21,11 @@ namespace liao {
 		while (getline(tokenStream, token, delimiter)) {
 			out.push_back(token);
 		}
+	}
+	std::shared_ptr<fstream> StaticFunc::OpenDataFile(const std::string& name)
+	{
+		shared_ptr<fstream> filePtr = make_shared<fstream>(Util::Setting::Get().getDataDirectory().data()+name+".dat",ios::in | ios::out | ios::binary);
+		return filePtr;
 	}
 	Math::HashType Configuration::UserIDHashType = Math::HashType::MD5;
 	string Configuration::UserInforFile = "users.dat";

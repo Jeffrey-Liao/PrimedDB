@@ -5,6 +5,7 @@ namespace liao::PrimedDB
 	class Session;
 	class UserManager:public Singleton<UserManager>
 	{
+		INVITESINGLETON;
 		std::unordered_map<std::string,UserPtr>m_allUsers;
 		std::vector<Session> m_took;
 		static User System;

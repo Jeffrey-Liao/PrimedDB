@@ -4,7 +4,7 @@
 #include <ranges> 
 namespace liao::PrimedDB {
 	class Table;
-	class User:public NullRefProvider<User>
+	class User
 	{
 		mutable ShareMutex m_mutex;
 		std::string m_id;
@@ -39,7 +39,7 @@ namespace liao::PrimedDB {
 		bool qualified(UserLevel level) const;
 		bool validate(const std::string& password) const;
 		static std::string PassWordHash(const std::string& rawText);
-		TablePtr createTable(std::string_view schema,std::string_view name,UserLevel permission);
+		TablePtr createTable(std::string schema,std::string name,UserLevel permission);
 		bool rename(std::string& name);
         void dropTable(const std::string& name);
 		void renameTable(const std::string& name, std::string& newName);

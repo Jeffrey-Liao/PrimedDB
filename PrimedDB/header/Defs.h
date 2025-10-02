@@ -17,8 +17,16 @@
 #include <utility>
 #include <format>
 #include <fstream>
+#include <queue>
 #include "sha.h"
+#include <functional>
 #include <string_view>
+#include <mutex>
+#include <memory>
+#include <future>
+#include <queue>
+namespace  liao
+{
 #define DYNAMIC template<class T>
 #define USESTD using namespace std
 #define DYNAMICCON(conce) template<conce T>
@@ -27,9 +35,13 @@
 #define USELIAOUTIL USELIAO::Util
 #define USELIAOPRIMED USELIAO::PrimedDB
 #define USELIAOMATH USELIAO::Math
-using Lock = std::unique_lock<std::mutex>;
-using ShareMutex = std::shared_mutex;
-using Mutex = std::mutex;
-using SimpleLock = std::lock_guard<std::mutex>;
-using WriteLock = std::unique_lock<ShareMutex>;
-using ReadLock = std::shared_lock<ShareMutex>;
+	using Lock = std::unique_lock<std::mutex>;
+	using ShareMutex = std::shared_mutex;
+	using Mutex = std::mutex;
+	using SimpleLock = std::lock_guard<std::mutex>;
+	using WriteLock = std::unique_lock<ShareMutex>;
+	using ReadLock = std::shared_lock<ShareMutex>;
+	using RecurMutex = std::recursive_mutex;
+	using UCharPtr = std::unique_ptr<char>;
+	using SCharPtr = std::shared_ptr<char>;
+}

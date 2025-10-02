@@ -12,12 +12,13 @@ namespace liao::PrimedDB
 		{
 			while (file.eof())
 			{
+				cache = "";
 				getline(file, cache);
                 if (cache.empty())
                     break;
 				vector<string> token;
                 StaticFunc::Split(token, cache, ':');
-				m_allUsers.insert(token[0],cache);
+				m_allUsers[token[0]] = make_shared<User>(cache);
 			}
 		}
 	}

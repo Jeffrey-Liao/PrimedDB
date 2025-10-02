@@ -41,12 +41,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Documentation/Primize Algorithm.md",
+                "file": "Draft/质数哈希函数设计(Design idea of prime hash function).md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Primize Algorithm"
+              "title": "质数哈希函数设计(Design idea of prime hash function)"
             }
           }
         ],
@@ -218,17 +218,17 @@
   },
   "active": "38451fdd1cc0f193",
   "lastOpenFiles": [
-    "Documentation/Primed DB.md",
-    "Documentation/Primize Algorithm.md",
-    "Draft/Class Information.md",
+    "Draft/Theory Introduction.md",
+    "Draft/Document introduction.md",
     "Draft/Class Log.md",
-    "Documentation",
+    "Draft/Class Information.md",
     "Draft/质数哈希函数设计(Design idea of prime hash function).md",
+    "Documentation/Primize Algorithm.md",
+    "Documentation/Primed DB.md",
+    "Documentation",
     "Draft/Introduction of Design.md",
     "Draft/UserManager.md",
-    "Draft/Document introduction.md",
     "`static void LogEndl(LogStream& obj)`.md",
-    "Draft/Theory Introduction.md",
     "Draft",
     "欢迎.md"
   ]

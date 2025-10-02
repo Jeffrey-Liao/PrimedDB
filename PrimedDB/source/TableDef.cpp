@@ -3,8 +3,8 @@
 USESTD;
 namespace liao::PrimedDB
 {
-	Table::Table()
-		:m_name("null"),m_permission(UserLevel::None),m_owner(User::GetNullRef())
+	Table::Table(Table&& move)
+		:m_owner(move.m_owner),m_permission(move.m_permission),m_name(std::move(move.m_name)),m_columns(std::move(move.m_columns)),m_recordNumber(move.m_recordNumber)
 	{}
 	Table::Table(User& owner, std::string& name, UserLevel permission)
 		:m_owner(owner),m_permission(permission)
@@ -54,7 +54,7 @@ namespace liao::PrimedDB
 	}
 
 	Table::Table(User& owner, const std::string& fileLine)
-		:m_owner(owner)
+		:m_owner(owner),m_permission(UserLevel::None)
 	{
 		constructFromFile();
 	}
@@ -76,12 +76,6 @@ namespace liao::PrimedDB
 			WriteLock lock(m_mutex);
 			m_name = std::move(name);
 		}
-	}
-	bool Table::exist(const string& name) const
-	{
-		auto iter = findColumn(name);
-		ReadLock lock(m_mutex);
-		return iter != m_columns.end();
 	}
 	auto Table::findColumn(const std::string& name)
 	{
@@ -107,6 +101,13 @@ namespace liao::PrimedDB
 		}
 		return m_columns.end();
 	}
+	bool Table::exist(const string& name) const
+	{
+		auto iter = findColumn(name);
+		ReadLock lock(m_mutex);
+		return iter != m_columns.end();
+	}
+	
 	void Table::dropColumn(const std::string& name)
 	{
 		auto iter = findColumn(name);
@@ -186,7 +187,7 @@ namespace liao::PrimedDB
 	{
 		std::ostringstream oss;
         ReadLock lock(m_mutex);
-		oss<<format("{}:{}:{}:{}",m_owner.getName(), m_name,m_permission,this->m_recordNumber);
+		oss<<format("{}:{}:{}:{}",m_owner.getName(), m_name,static_cast<int>(m_permission),this->m_recordNumber);
 		for (int n =0;n<this->size();++n)
 		{
 			if (n+1<size())

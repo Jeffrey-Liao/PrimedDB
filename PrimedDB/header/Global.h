@@ -1,6 +1,7 @@
 #pragma once
 #include "TimeStamp.h"
 #include "HashContainer.h"
+#include "Singleton.h"
 //.def file for structure definition. .inf file for informations. .dat file for data.
 namespace liao
 {
@@ -74,6 +75,7 @@ namespace liao
 		}
 		static std::string GetUniqueId(Math::HashType type = Math::HashType::SHA256);
 		static void Split(std::vector<std::string>& out, const std::string& s, char delimiter);
+		static std::shared_ptr < std::fstream > OpenDataFile(const std::string& name);
 	};
 	class Configuration
 	{
@@ -114,24 +116,5 @@ namespace liao
 			!std::is_copy_constructible_v<T> &&
 			!std::is_move_constructible_v<T>;
 	};
-	DYNAMIC
-	class Singleton
-	{
-		Singleton(const Singleton&) = delete;
-		Singleton& operator=(const Singleton&) = delete;
-		Singleton(Singleton&&) = delete;
-        Singleton& operator=(Singleton&&) = delete;
-	protected:
-		Singleton() = default;
-		~Singleton() = default;
-		static ShareMutex m_mutex;
-	public:
-		static T& getInstance()
-		{
-			static T instance;
-			return instance;
-		}
-	};
-	using UCharPtr = std::unique_ptr<char>;
-	using SCharPtr = std::shared_ptr<char>;
+
 }

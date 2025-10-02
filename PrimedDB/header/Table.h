@@ -10,13 +10,11 @@ namespace liao::PrimedDB
 	class Table
 	{
 		std::string m_name;
-		Math::GmpBigNumber m_prime;
 		std::vector<ColumnPtr> m_columns;
 		UserLevel m_permission;
 		size_t m_recordNumber = 0;
 		User& m_owner;
 		mutable std::shared_mutex m_mutex;
-		DataCache m_dataPool;
 
 		void constructFromFile();
 		void createTableDefFile();
@@ -25,7 +23,7 @@ namespace liao::PrimedDB
 		Table(const Table&) = delete;
 		Table(User& m_owner,const std::string& fileLine);
 		Table& operator=(const Table&);
-		Table(Table&&) = delete;
+		Table(Table&&);
 		Table(User& owner,std::string& name, UserLevel permission);
 		const std::string& getName() const;
 		auto findColumn(const std::string& name);

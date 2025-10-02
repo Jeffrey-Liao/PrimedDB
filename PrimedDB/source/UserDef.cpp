@@ -1,3 +1,4 @@
+#include "Setting.h"
 #include "User.h"
 #include "UserManager.h"
 USECRPT;
@@ -48,7 +49,7 @@ namespace liao::PrimedDB
 		}
 	}
 	User::User(string& name, string& password, UserLevel level)
-		:m_name(std::move(name)), m_level(level),m_id(StaticFunc::GetUniqueId(Configuration::UserIDHashType))
+		:m_name(std::move(name)), m_level(level),m_id(StaticFunc::GetUniqueId(Util::Setting::Get().getUserIDHashType()))
 	{
 		changePassword(password);
 		m_tables.reserve(5);
@@ -67,7 +68,7 @@ namespace liao::PrimedDB
 		{
 			for (int n = 0; n < m_tables.size(); ++n)
 			{
-				delete m_tables[n];
+				m_tables[n].reset();
 			}
 		}
 		m_tables.clear();
@@ -136,7 +137,7 @@ namespace liao::PrimedDB
 		return m_level >= level;
 	}
 
-	TablePtr User::createTable(std::string_view schema, std::string_view name, UserLevel permission)
+	TablePtr User::createTable(std::string schema, std::string name, UserLevel permission)
 	{
 		{
 			ReadLock lock(m_mutex);
@@ -146,13 +147,13 @@ namespace liao::PrimedDB
 			}
 		}
 		WriteLock lock(m_mutex);
-		m_tables.emplace_back(new Table(*this,name,permission));
+		m_tables.emplace_back(new Table(*this, name,permission));
 		return m_tables[m_tables.size()-1];
 	}
 	bool User::rename(string& name)
 	{
 		WriteLock lock(m_mutex);
-		if (name == "null"|| UserManager::getInstance().exist(name))
+		if (name == "null"|| UserManager::Get().exist(name))
 			return false;
 		m_name = std::move(name);
 		return true;

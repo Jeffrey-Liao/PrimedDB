@@ -31,8 +31,14 @@ namespace liao::PrimedDB
 		*(m_data+convert(index)) = 0;
 		m_used--;
 	}
-	void Page::insert(page_index index, std::string_view data);
-	char* Page::get(page_index index);
+	void Page::insert(page_index index, std::string_view data)
+	{
+		
+	}
+	char* Page::get(page_index index)
+	{
+		return nullptr;
+	}
 	page_index Page::size() const
 	{
 		return m_size;
