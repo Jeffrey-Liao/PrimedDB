@@ -7,25 +7,19 @@ namespace liao::Util
 	Setting::Setting()
 	{
 		fs::path programPath = fs::current_path();
-		fs::path compilerPath = programPath;
-        compilerPath.append(m_compilerDirectory);
-		if (fs::exists(compilerPath)&&fs::exists("setting.cfg"))
-		{
-			
-		}
-		else
-		{
-			string name = "FileNotExist",message = "Given target file name does not exist";
-			ErrorManager::Get().set(ErrorLevel::Fatal, name, message);
-		}
-	}
-	void Setting::read()
-	{
-		
-	}
-	void Setting::write()
-	{
-		
+		fs::path compilerPath = programPath/m_compilerDirectory;
+		fs::path dataPath = programPath/m_dataDirectory;
+        fs::path globalPath = programPath/m_globalDirectory;
+		fs::path logPath = programPath/m_logDirectory;
+
+		if (!fs::exists(compilerPath))
+			fs::create_directory(compilerPath);
+		if (!fs::exists(dataPath))
+            fs::create_directory(dataPath);
+        if (!fs::exists(globalPath))
+            fs::create_directory(globalPath);
+        if (!fs::exists(logPath))
+            fs::create_directory(logPath);
 	}
 	unsigned int Setting::getBlockNumber()const
 	{
@@ -33,7 +27,7 @@ namespace liao::Util
 	}
 	unsigned int Setting::getBlockSize()const
 	{
-        return m_blockSize;
+        return m_blockSize * m_kbConvert;
 	}
 	unsigned int Setting::getEnlargeSize()const
 	{
@@ -48,6 +42,18 @@ namespace liao::Util
 	{
 		return m_port;
 	}
+	unsigned int Setting::getNameSize() const
+	{
+		return m_nameSize;
+	}
+	unsigned Setting::getEnlargePower() const
+	{
+		return m_enlargePower;
+	}
+	Math::HashType Setting::getUserIDHashType() const
+	{
+		return m_userIDHashType;
+	}
 
 	unsigned int Setting::setBlockSize(unsigned int blockSize)
 	{
@@ -56,10 +62,6 @@ namespace liao::Util
 	unsigned int Setting::setBlockNumber(unsigned int blockNumber)
 	{
 		return m_blockNumber = blockNumber;
-	}
-	unsigned int Setting::setEnlargeSize(unsigned int enlargeSize)
-	{
-		return m_enlargeSize = enlargeSize;
 	}
 	unsigned int Setting::setSessionNumber(unsigned int sessionNumber)
 	{

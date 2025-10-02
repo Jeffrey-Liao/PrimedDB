@@ -75,6 +75,7 @@ namespace liao
 		}
 		static std::string GetUniqueId(Math::HashType type = Math::HashType::SHA256);
 		static void Split(std::vector<std::string>& out, const std::string& s, char delimiter);
+		static std::shared_ptr < std::fstream > OpenDataFile(const std::string& name);
 	};
 	class Configuration
 	{

@@ -146,6 +146,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Inactive.cpp" />
+    <ClCompile Include="source\BlockDef.cpp" />
+    <ClCompile Include="source\BlockManagerDef.cpp" />
     <ClCompile Include="source\ClassInforDef.cpp" />
     <ClCompile Include="source\ColumnDef.cpp" />
     <ClCompile Include="source\DataCache.cpp" />
@@ -168,6 +170,9 @@
     <ClCompile Include="TestMain.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="header\AsyncService.h" />
+    <ClInclude Include="header\Block.h" />
+    <ClInclude Include="header\BlockManager.h" />
     <ClInclude Include="header\ClassInfor.h" />
     <ClInclude Include="header\Column.h" />
     <ClInclude Include="header\ControlManager.h" />

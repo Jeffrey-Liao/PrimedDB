@@ -1,3 +1,4 @@
+#include "Setting.h"
 #include "User.h"
 #include "UserManager.h"
 USECRPT;
@@ -48,7 +49,7 @@ namespace liao::PrimedDB
 		}
 	}
 	User::User(string& name, string& password, UserLevel level)
-		:m_name(std::move(name)), m_level(level),m_id(StaticFunc::GetUniqueId(Configuration::UserIDHashType))
+		:m_name(std::move(name)), m_level(level),m_id(StaticFunc::GetUniqueId(Util::Setting::Get().getUserIDHashType()))
 	{
 		changePassword(password);
 		m_tables.reserve(5);

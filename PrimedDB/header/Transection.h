@@ -18,10 +18,7 @@ namespace liao::PrimedDB
 	DYNAMICCON(Concept_TransectionTypeRequired)
 	class Transection
 	{
-		User& m_operator;
-		std::string m_id;
-		T& m_target;
-		std::string m_operation;
+		
 
 		ShareMutex m_mutex;
 	public:

@@ -170,4 +170,10 @@ namespace liao::Util
     {
         return m_literal;
     }
+    TimeStamp& TimeStamp::operator=(TimeStamp&& move)
+    {
+        m_literal = std::move(move.m_literal);
+        m_timestamp = move.m_timestamp;
+        return *this;
+    }
 }

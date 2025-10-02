@@ -76,6 +76,7 @@ namespace liao::Util {
         static TimeStamp Now();
         operator std::string() const;
         static TimePoint SystemTime();
+        TimeStamp& operator=(TimeStamp&&);
         ~TimeStamp() = default;
     };
 }

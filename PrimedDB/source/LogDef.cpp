@@ -8,10 +8,11 @@
 using namespace std;
 namespace liao::Infor
 {
-	Log Log::Logger;
-	mutex Log::LogMutex;	
 	mutex Log::LogStream::LogStreamMutex;
 	static mutex timeMutex;
+	condition_variable Log::m_cv;
+	ShareMutex Log::m_staticMutex;
+	queue<Log::LogStream> Log::m_messages;
 	static string GetTime()
 	{
 		lock_guard<mutex> lock(timeMutex);
@@ -22,18 +23,47 @@ namespace liao::Infor
 		oss << put_time(&local_time, "[%F %T]");  // 格式示例: [2023-04-05 15:30:45]
 		return oss.str();
 	}
+	void Log::asyncFileHandler()
+	{
+		ofstream file;
+		while (1)
+		{
+			Lock lock(m_cvMutex);
+			m_cv.wait(lock, [this]()
+				{
+					return !m_messages.empty() || m_end;
+				});
+			bool run;
+			{
+				ReadLock lock(m_staticMutex);
+				run = !m_messages.empty();
+			}
+			while (run)
+			{
+				file.close();
+				{
+					ReadLock lock(m_staticMutex);
+					auto& object = m_messages.front();
+					file.open(object.getFile(), ios::app);
+					file << object.getMessage() << endl;
+				}
+				{
+					WriteLock lock(m_staticMutex);
+					m_messages.pop();
+					run = !m_messages.empty();
+				}
+			}
+			file.close();
+			if (m_end)
+				break;
+		}
+	}
 	Log::Log()
 	{
-		if (!fs::exists(LOG_FOLDER))
-			fs::create_directories(LOG_FOLDER);
+		m_asyncTerminate = std::async(std::launch::async, &Log::asyncFileHandler,this);
+		if (!fs::exists(LogFilePath))
+			fs::create_directories(LogFilePath);
 		//fatalFile.open(LOG_FOLDER.append(FATAL_LOG_FILE), std::ios::app);
-	}
-	Log::~Log()
-	{
-	}
-	Log& Log::Get()
-	{
-		return Logger;
 	}
 	void Log::Print(const string& message)
 	{
@@ -67,11 +97,10 @@ namespace liao::Infor
 		printMessage(message, fileName);
 	}
 
-	void Log::printError(const std::string& message, string& fileName)
+	void Log::printError(const std::string& message, const string& fileName)
 	{
 		string cache;
 		{
-			std::lock_guard<std::mutex> lock(LogMutex);
 			cache = format("{} - [{}]: {}", GetTime(), "Error", message);
 			LogStream temp = LogStream(cache);
 			temp.openToFile(fileName);
@@ -79,11 +108,10 @@ namespace liao::Infor
 		}
 
 	}
-	void Log::printDebug(const std::string& message, string& fileName)
+	void Log::printDebug(const std::string& message, const string& fileName)
 	{
 		string cache;
 		{
-			std::lock_guard<std::mutex> lock(LogMutex);
 			cache = format("{} - [{}]: {}", GetTime(), "Debug", message);
 			LogStream temp = LogStream(cache);
 			temp.openToFile(fileName);
@@ -91,11 +119,10 @@ namespace liao::Infor
 		}
 
 	}
-	void Log::printMessage(const std::string& message, string& fileName)
+	void Log::printMessage(const std::string& message, const string& fileName)
 	{
 		string cache;
 		{
-			std::lock_guard<std::mutex> lock(LogMutex);
 			cache = format("{} - [{}]: {}", GetTime(), "Message", message);
 			LogStream temp = LogStream(cache);
 			temp.openToFile(fileName);
@@ -133,51 +160,60 @@ namespace liao::Infor
 	{
 		return LogStream(type);
 	}
-	void write(std::ofstream&& file, string&& message)
-	{
-		if (file.is_open())
-		{
-			file << message << endl;
-			file.close();
-		}
-	}
 	void Log::LogEndl(LogStream& obj)
 	{
-		cout << obj.m_cache << endl;
-		auto future = std::async(std::launch::async, write, std::move(obj.m_logFile), std::move(obj.m_cache));
-		obj.m_cache.clear();
-		obj.m_logFile.close();
+		{
+			WriteLock lock(m_staticMutex);
+			cout << obj.m_cache << endl;
+			m_messages.emplace(std::move(obj));
+			m_cv.notify_one();
+		}
 	}
-
+	Log::~Log()
+	{
+		m_end = true;
+        m_cv.notify_one();
+        m_asyncTerminate.get();
+	}
 	Log::LogStream& Log::LogStream::openToFile(const string& name)
 	{
 		if (name != "")
 		{
-			auto curPath = fs::current_path();
-			curPath.append(name);
-			if(m_logFile.is_open())
-				m_logFile.close();
-			m_logFile.open(curPath, ios::app);
+			auto curPath = fs::current_path()/ LogFilePath/name;
+            m_logFile = curPath.string();
 		}
 		return *this;
 	}
+	std::string& Log::LogStream::getFile()
+	{
+		return m_logFile;
+	}
 
-	string Log::LogStream::getLabel(LogType type) const
+	std::string& Log::LogStream::getMessage()
+	{
+		return m_cache;
+	}
+	string Log::LogStream::getLabel(LogType type)
 	{
 		if(type == LogType::Error)
 			return "Error";
 		else if (type == LogType::Debug)
 			return "Debug";
 		else if (type == LogType::Info)
-			return "Message";
+			return "Info";
 		else if (type == LogType::Warning)
 			return "Warning";
+		else if (type == LogType::Fatal)
+			return "Fatal";
 		else
 			return "";
 	}
-
+	string Log::LogFilePath = "log";
 	Log::LogStream::LogStream(LogType type)
 		:TYPE(type), m_cache(format("{} - [{}]:", GetTime(), getLabel(type)))
+	{}
+	Log::LogStream::LogStream(Log::LogStream && mObject) noexcept
+		: TYPE(mObject.TYPE), m_cache(std::move(mObject.m_cache)),m_logFile(std::move(mObject.m_logFile)),m_split(mObject.m_split)
 	{}
 	Log::LogStream::LogStream(const string& message)
 		:TYPE(LogType::None), m_cache(message)
@@ -202,15 +238,19 @@ namespace liao::Infor
 	{
 		return *this;
 	}
-	Log::LogStream& Log::LogStream::change(const char spliter)
+	Log::LogStream& Log::LogStream::split(const char split)
 	{
 		size_t pos = 0;
-		while ((pos=m_cache.find(m_spliter))!=m_cache.npos)
+		while ((pos=m_cache.find(m_split))!=m_cache.npos)
 		{
-			m_cache.replace(pos,1,1,spliter);
+			m_cache.replace(pos,1,1,split);
 		}
-		m_spliter = spliter;
+		m_split = split;
 		return *this;
+	}
+	string& Log::LogStream::getString()
+	{
+		return m_cache;
 	}
 
 	Log::LogStream& Log::LogStream::remove(const string& message)
@@ -243,6 +283,6 @@ namespace liao::Infor
 	}
 	Log::LogStream::~LogStream()
 	{
-		m_logFile.close();
+		Log::m_cv.notify_one();
 	}
 }

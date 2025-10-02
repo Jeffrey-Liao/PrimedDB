@@ -117,6 +117,12 @@
     <ClCompile Include="source\test\ErrorManagerTestDef.cpp">
       <Filter>Test\TestSource</Filter>
     </ClCompile>
+    <ClCompile Include="source\BlockDef.cpp">
+      <Filter>Storage\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\BlockManagerDef.cpp">
+      <Filter>Storage\Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="header\Log.h">
@@ -199,6 +205,15 @@
     </ClInclude>
     <ClInclude Include="header\Singleton.h">
       <Filter>Util\header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\Block.h">
+      <Filter>Storage\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\AsyncService.h">
+      <Filter>Util\header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\BlockManager.h">
+      <Filter>Storage\Header</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

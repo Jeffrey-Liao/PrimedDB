@@ -1,6 +1,6 @@
 #pragma once
 #include <future>
-#include <queue>
+#include <deque>
 #include <stack>
 
 #include "TimeStamp.h"
@@ -8,6 +8,8 @@
 
 namespace liao::Util
 {
+    struct Error;
+
     enum class ErrorLevel:char
     {
         Info,
@@ -15,43 +17,73 @@ namespace liao::Util
         Error,
         Fatal,
     };
+    class ErrorHandlers
+    {
+    public:
+        static void FileNotExistHandler(Error& error);
+    };
     struct Error
     {
         ErrorLevel m_level;
         std::string m_name;
         std::string m_message;
         TimeStamp m_errorTime;
+        Error() = default;
+        Error(const Error&) = default;
+        Error(Error&&);
         Error(ErrorLevel, std::string& , std::string&);
         Error(ErrorLevel, std::string_view, std::string_view);
         bool operator==(Error& error);
+        Error& operator=(Error&& error);
     };
     class ErrorManager final:public Singleton<ErrorManager>
     {
         friend class Singleton;
         using ErrorHandler = std::function<void(Error&)>;
-        std::vector<bool> m_levelInProcess;
-        std::queue<Error> m_errors;
-        std::unordered_map<std::string, bool> m_inProcess;
+        std::deque<Error> m_errors;
         std::condition_variable m_conditionVar;
         std::unordered_map <std::string, std::vector<ErrorHandler>> m_serviceByName;
         std::unordered_map <ErrorLevel, std::vector<ErrorHandler>> m_serviceByLevel;
         std::atomic<bool> end = false;
         mutable ShareMutex m_mutex;
+        mutable ShareMutex m_errorMutex;
         mutable std::mutex m_cvmutex;
         std::atomic<bool> m_reported = false;
-        std::future<void> m_publishFuture;
+        std::future<void> m_asyncTerminate;
         void publish();
         static void send(std::vector<ErrorHandler>& services, Error& error);
         static void send(ErrorHandler& service, Error& error);
-        bool contains(const std::string& error) const;
     protected:
         ErrorManager();
     public:
         void set(Error& error);
         void set(ErrorLevel level, std::string& error,std::string& errorMessage);
         void set(ErrorLevel level, std::string_view error, std::string_view errorMessage);
-        void subscribe(ErrorLevel level,const ErrorHandler&);
-        void subscribe(std::string_view error, const ErrorHandler&);
+        template<class F, class... Args>
+        void subscribe(ErrorLevel level, F&& func, Args&&... args)
+        {
+            WriteLock lock(m_mutex);
+            m_serviceByLevel[level].emplace_back(
+                [func = std::forward<F>(func), args_tuple = std::make_tuple(std::forward<Args>(args)...)](Error& error) mutable
+                {
+                    if constexpr (sizeof...(args) == 0) {
+                        std::invoke(func, error);
+                    }
+                    else {
+                        apply_custom(func, args_tuple, error);
+                    }
+                });
+        }
+        template<class F, class... Args>
+        void subscribe(std::string_view error, F&& func, Args&&... args)
+        {
+            WriteLock lock(m_mutex);
+            m_serviceByName[error.data()].emplace_back(
+                [func = std::forward<F>(func), args_tuple = std::make_tuple(std::forward<Args>(args)...)]() mutable
+                {
+                    std::apply(func, args_tuple);
+                });
+        }
         ~ErrorManager();
     };
 }
