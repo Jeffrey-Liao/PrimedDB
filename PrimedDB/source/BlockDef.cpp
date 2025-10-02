@@ -6,13 +6,13 @@ namespace liao::PrimedDB
 	Block::OwnerInfo::OwnerInfo(OwnerInfo&& move)
 		:m_ownerName(std::move(move.m_ownerName)),m_available(std::move(move.m_available)),m_beginLine(move.m_beginLine)
 	{}
-	void Block::allocate(const char* source, unsigned size)
+	void Block::allocate(const std::shared_ptr<char> source, unsigned size)
 	{
 		
 		if (m_memory == nullptr)
             m_memory = new char[Util::Setting::Get().getBlockSize()];
 		if (source != nullptr)
-			memcpy_s(m_memory, Util::Setting::Get().getBlockSize(), source, size);
+			memcpy_s(m_memory, Util::Setting::Get().getBlockSize(), source.get(), size);
 	}
 	void Block::deallocate()
 	{
@@ -76,9 +76,9 @@ namespace liao::PrimedDB
 	//return success(true) fail(false)
 	unsigned int Block::write(std::string& memory, unsigned byteSize)
 	{
-        return write(memory.data(), memory.size(), byteSize);
+        return write(shared_ptr<char>(memory.data()), memory.size(), byteSize);
 	}
-	unsigned int Block::write(char* memory, unsigned size, unsigned byteSize)
+	unsigned int Block::write(std::shared_ptr<char> memory, unsigned size, unsigned byteSize)
 	{
 		if (empty())
 			allocate();
@@ -94,7 +94,7 @@ namespace liao::PrimedDB
 		for (int n = 0; n < allowedNumber; ++n)
 		{
 			WriteLock lock(m_mutex);
-			memcpy_s(ptr, byteSize, memory, byteSize);
+			memcpy_s(ptr, byteSize, memory.get(), byteSize);
 			ptr += byteSize;
 		}
 		{
@@ -139,21 +139,21 @@ namespace liao::PrimedDB
 	{
 		(*m_owner.m_available)[m_owner.m_beginLine + index] = false;
 	}
-	bool Block::insert(unsigned byteSize, char* memory)
+	bool Block::insert(unsigned byteSize, std::shared_ptr<char> memory)
 	{
 		if (m_size+byteSize > Setting::Get().getBlockSize())
 			return false;
 		char* ptr = m_memory + m_size;
-        memcpy_s(ptr, byteSize, memory, byteSize);
+        memcpy_s(ptr, byteSize, memory.get(), byteSize);
 		return true;
 	}
-	void Block::modify(unsigned index, unsigned byteSize, char* memory, int size)
+	void Block::modify(unsigned index, unsigned byteSize, std::shared_ptr<char>& memory, int size)
 	{
 		if (size < byteSize)
 			ErrorManager::Get().set(ErrorLevel::Error, "InvalidArgument", "Given memory size is smaller than memory want to be get");
 		WriteLock lock(m_mutex);
 		char* ptr = m_memory + index * byteSize;
-		memcpy_s(ptr, byteSize, memory, byteSize);
+		memcpy_s(ptr, byteSize, memory.get(), byteSize);
 	}
 	const char* Block::get(unsigned index, unsigned byteSize)const
 	{

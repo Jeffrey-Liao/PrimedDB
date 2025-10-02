@@ -15,21 +15,46 @@ namespace liao::PrimedDB
 			|| std::same_as<T, PrimedDB::Schema>
 			|| std::same_as<T,PrimedDB::Session>;
 	};
-	DYNAMICCON(Concept_TransectionTypeRequired)
+
+	enum class TransectionType
+	{
+		Update,
+		Insert,
+        Delete
+	};
+	//DYNAMICCON(Concept_TransectionTypeRequired)
 	class Transection
 	{
-		
-
-		ShareMutex m_mutex;
+		std::string m_id;
+		TransectionType m_operation;
+        User& m_operator;
+		std::function<void()> m_function;
+		std::atomic<bool> m_valid = true;
 	public:
-		Transection(User& m_operator,T& target,std::string& operation)
-			: m_operator(m_operator),m_target(target),m_operation(std::move(operation))
+		template<class F, class... Args>
+		Transection(User& m_operator, TransectionType operation, F&& func, Args&&... args)
+			: m_operator(m_operator),m_operation(operation),m_id(StaticFunc::GetUniqueId(Math::HashType::MD5))
 		{
-			m_id = StaticFunc::GetUniqueId();
+			m_function = [func = std::forward<F>(func), args_tuple = std::make_tuple(std::forward<Args>(args)...)]() mutable
+				{
+						std::apply(func, args_tuple);
+				};
 		}
-		std::string toString()
+		bool compare(Transection& other)const
 		{
-			return std::format("{} {}",m_id,m_operator.getId());
+			return m_id == other.m_id;
+		}
+		bool valid()const
+		{
+			return m_valid;
+		}
+		void commit()
+		{
+			m_function();
+		}
+		void rollback()
+		{
+			
 		}
 	};
 }

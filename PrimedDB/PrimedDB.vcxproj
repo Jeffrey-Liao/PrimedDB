@@ -186,6 +186,7 @@
     <ClInclude Include="header\Page.h" />
     <ClInclude Include="header\PrimeNumberConvert.h" />
     <ClInclude Include="header\Primize.h" />
+    <ClInclude Include="header\Record.h" />
     <ClInclude Include="header\Schema.h" />
     <ClInclude Include="header\Session.h" />
     <ClInclude Include="header\Setting.h" />

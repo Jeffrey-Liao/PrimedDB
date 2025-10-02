@@ -23,7 +23,7 @@ namespace liao::PrimedDB
 		//size of how many record in memory
 		unsigned m_recordSize;
 		mutable ShareMutex m_mutex;
-		void allocate(const char* source = nullptr, unsigned size = 0);
+		void allocate(const std::shared_ptr<char> source = nullptr, unsigned size = 0);
 		void deallocate();
 
 	public:
@@ -38,15 +38,15 @@ namespace liao::PrimedDB
 		void resize();
 		//return success(true) fail(false)
 		unsigned int write(std::string&,unsigned byteSize);
-		unsigned int write(char*, unsigned size, unsigned byteSize);
+		unsigned int write(std::shared_ptr<char>, unsigned size, unsigned byteSize);
 		void write(std::shared_ptr<std::fstream> file, unsigned byteSize);
 		bool empty() const;
 		unsigned int size() const;
 		unsigned reocrdSize() const;
 		const char* reference() const;
 		void remove(unsigned index) const;
-		bool insert(unsigned byteSize, char* memory);
-		void modify(unsigned index, unsigned byteSize, char* memory,int size);
+		bool insert(unsigned byteSize, std::shared_ptr<char> memory);
+		void modify(unsigned index, unsigned byteSize, std::shared_ptr<char>& memory,int size);
 		const char* get(unsigned index, unsigned byteSize)const;
 		UCharPtr release();
 		//==same

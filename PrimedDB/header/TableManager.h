@@ -4,7 +4,8 @@ namespace liao::PrimedDB
 {
 	class TableManager :public Singleton<TableManager>
 	{
-		std::unordered_map <std::string, Schema> m_schemas;
+		INVITESINGLETON;
+		std::vector<TablePtr> m_tables;
 	public:
 		bool exist()const;
 		void createSchema(User& creator, std::string& name);
@@ -13,8 +14,7 @@ namespace liao::PrimedDB
         void removeSchema(User& executor,const std::string& name);
         void removeTable(User& executor, const std::string& schemaName, const std::string& tableName);
 		int size()const;
-
-
+		std::vector<TablePtr>& all();
 	};
 }
 

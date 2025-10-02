@@ -215,5 +215,8 @@
     <ClInclude Include="header\BlockManager.h">
       <Filter>Storage\Header</Filter>
     </ClInclude>
+    <ClInclude Include="header\Record.h">
+      <Filter>Storage\Header</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

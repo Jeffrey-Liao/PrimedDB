@@ -11,7 +11,6 @@ namespace liao::PrimedDB {
 		std::string m_name;
 		std::string m_password;
 		UserLevel m_level;
-
 		std::vector<TablePtr> m_tables;
 		
 

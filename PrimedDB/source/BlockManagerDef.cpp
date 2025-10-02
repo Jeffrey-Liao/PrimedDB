@@ -1,13 +1,20 @@
 #include "BlockManager.h"
+#include "Log.h"
+
 namespace liao::PrimedDB
 {
-	BlockManager::File::File(const std::string& name)
-		:m_file(StaticFunc::OpenDataFile(name)),m_blocks(Util::Setting::Get().getBlockNumber())
+	unsigned BlockManager::BlockPerRecord(int byteSize)
+	{
+		return Util::Setting::Get().getBlockSize() / byteSize;
+	}
+	File::File(const std::string& name)
+		:m_file(StaticFunc::OpenDataFile(name))
 	{
 		int size;
 		char* buffer = nullptr;
 		if (m_file != nullptr)
 		{
+			(*m_file) >> m_byteSize;
 			(*m_file) >> size;
 			m_available.reserve(size);
 			buffer = new char[size = size/8];
@@ -23,18 +30,39 @@ namespace liao::PrimedDB
 		}
 		delete[] buffer;
 	}
-	BlockManager::File::~File()
+	File::~File()
 	{
 		m_file->close();
 	}
+	void File::dropBlock(int index)
+	{
+		auto iter = std::find(m_owned.begin(), m_owned.end(), index);
+		if (iter != m_owned.end())
+			*iter = -1;
+	}
 	BlockManager::BlockManager()
 		:m_blocks(Util::Setting::Get().getBlockNumber())
-	{}
+	{
+		auto& value = TableManager::Get().all();
+        for (auto& table : value) {
+			m_files.emplace(table->getName(), File(table->getName()));
+		}
+	}
 	BlockManager::~BlockManager()
 	{
 		m_files.clear();
         m_active.clear();
-        m_inactive.clear();
 		m_blocks.clear();
+	}
+	void BlockManager::write(Table& table, unsigned linePos, std::shared_ptr<char>& memory, int size)
+	{
+		File& file = m_files[table.getName()];
+		if (linePos > file.m_available.size())
+		{
+			Util::ErrorManager::Get().set(Util::ErrorLevel::Error, "IndexOutRange", "Given line number is bigger than the max size of table");
+		}
+		int blockIndex = linePos/BlockPerRecord(file.m_byteSize),
+			lineIndex = linePos % BlockPerRecord(file.m_byteSize);
+		m_blocks[file.m_owned[blockIndex]].modify(linePos,file.m_byteSize,memory,size);
 	}
 }
