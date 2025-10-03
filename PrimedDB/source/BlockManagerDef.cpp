@@ -54,15 +54,48 @@ namespace liao::PrimedDB
         m_active.clear();
 		m_blocks.clear();
 	}
-	void BlockManager::write(Table& table, unsigned linePos, std::shared_ptr<char>& memory, int size)
+	int BlockManager::allocate(const std::string& name)
+	{
+		std::pair<int, std::string> pair = std::make_pair(0, "");
+		if (!m_active.empty())
+		{
+			if (m_active.size()==m_blocks.size())
+			{
+				pair = m_active.front();
+                m_active.pop_front();
+                m_files[pair.second].dropBlock(pair.first);
+				pair.second = name;
+			}
+			else
+			{
+				pair.first = m_active.back().first+1;
+				pair.second = name;
+			}
+		}
+		m_active.emplace_back(pair);
+		return pair.first;
+	}
+	void BlockManager::write(Table& table, unsigned linePos, std::shared_ptr<char>& memory)
 	{
 		File& file = m_files[table.getName()];
 		if (linePos > file.m_available.size())
 		{
-			Util::ErrorManager::Get().set(Util::ErrorLevel::Error, "IndexOutRange", "Given line number is bigger than the max size of table");
+			Util::ErrorManager::Get().set(Util::ErrorLevel::Error, "IndexOutRange", "Given line number is bigger than the max size of table",Infor::ClassInfor(THISFUNC,THISFILE));
 		}
 		int blockIndex = linePos/BlockPerRecord(file.m_byteSize),
 			lineIndex = linePos % BlockPerRecord(file.m_byteSize);
-		m_blocks[file.m_owned[blockIndex]].modify(linePos,file.m_byteSize,memory,size);
+		m_blocks[file.m_owned[blockIndex]].modify(lineIndex,file.m_byteSize,memory,file.m_byteSize);
+	}
+	void BlockManager::insert(Table& table, std::shared_ptr<char>& memory)
+	{
+		File& file = m_files[table.getName()];
+		int index= file.m_owned.back();
+		while (!m_blocks[index].insert(file.m_byteSize,memory))
+		{
+			index = allocate(table.getName());
+			file.addBlock(index);
+            m_blocks[index].insert(file.m_byteSize,memory);
+		}
+
 	}
 }

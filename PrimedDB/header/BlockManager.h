@@ -15,8 +15,11 @@ namespace liao::PrimedDB
 		int m_byteSize;
 		std::vector<bool> m_available;
 		std::deque<int> m_owned;
+		File() = default;
 		File(const std::string& name);
 		void dropBlock(int index);
+		void recover(int ownIndex,int index);
+		void addBlock(int index);
 		~File();
 	};
 	class BlockManager:public Singleton<BlockManager>
@@ -34,8 +37,10 @@ namespace liao::PrimedDB
 
 
 		BlockManager();
+		int allocate(const std::string&);
 	public:
-		void write(Table& table, unsigned linePos,std::shared_ptr<char>& memory, int size);
+		void write(Table& table, unsigned linePos,std::shared_ptr<char>& memory);
+		void insert(Table& table, std::shared_ptr<char>& memory);
 		~BlockManager();
 	};
 }

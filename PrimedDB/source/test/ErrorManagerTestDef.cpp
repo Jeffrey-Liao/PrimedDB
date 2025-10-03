@@ -7,7 +7,7 @@ namespace liao::Test
 	{
 		string error = "TestError";
 		string testErrorMessage = "A Test Error Happened";
-		Error errorObject(ErrorLevel::Info, error, testErrorMessage);
+		Error errorObject(ErrorLevel::Info, error, testErrorMessage,Infor::ClassInfor(THISFUNC,THISFILE));
 		m_errorManager.set(errorObject);
 		errorObject.m_level = ErrorLevel::Warning;
 		m_errorManager.set(errorObject);
@@ -20,7 +20,7 @@ namespace liao::Test
 	{
 		string error = "TestError";
 		string testErrorMessage = "A Test Error Happened";
-		Error errorObject(ErrorLevel::Info, error, testErrorMessage);
+		Error errorObject(ErrorLevel::Info, error, testErrorMessage, Infor::ClassInfor(THISFUNC, THISFILE));
 		m_errorManager.set(errorObject);
 		errorObject.m_level = ErrorLevel::Warning;
 		m_errorManager.set(errorObject);

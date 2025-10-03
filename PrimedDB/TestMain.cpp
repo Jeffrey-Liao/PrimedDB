@@ -34,6 +34,6 @@
 #include "test/ErrorManagerTest.h"
 int main()
 {
-	//liao::Test::ErrorManagerTest test;
-    //test.run();
+	liao::Test::ErrorManagerTest test;
+    test.run();
 }

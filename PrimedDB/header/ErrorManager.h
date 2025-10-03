@@ -28,11 +28,12 @@ namespace liao::Util
         std::string m_name;
         std::string m_message;
         TimeStamp m_errorTime;
+        Infor::ClassInfor m_info;
         Error() = default;
         Error(const Error&) = default;
-        Error(Error&&);
-        Error(ErrorLevel, std::string& , std::string&);
-        Error(ErrorLevel, std::string_view, std::string_view);
+        Error(Error&&) noexcept;
+        Error(ErrorLevel, std::string& , std::string&, const Infor::ClassInfor&);
+        Error(ErrorLevel, std::string_view, std::string_view,const Infor::ClassInfor&);
         bool operator==(Error& error);
         Error& operator=(Error&& error);
     };
@@ -57,8 +58,8 @@ namespace liao::Util
         ErrorManager();
     public:
         void set(Error& error);
-        void set(ErrorLevel level, std::string& error,std::string& errorMessage);
-        void set(ErrorLevel level, std::string_view error, std::string_view errorMessage);
+        void set(ErrorLevel level, std::string& error,std::string& errorMessage,const Infor::ClassInfor& info);
+        void set(ErrorLevel level, std::string_view error, std::string_view errorMessage,const Infor::ClassInfor& info);
         template<class F, class... Args>
         void subscribe(ErrorLevel level, F&& func, Args&&... args)
         {

@@ -14,7 +14,8 @@ namespace liao::PrimedDB
 			unsigned m_beginLine;
 
 			OwnerInfo() = default;
-			OwnerInfo(OwnerInfo&&);
+			OwnerInfo(OwnerInfo&&) noexcept;
+			OwnerInfo& operator=(OwnerInfo&&) noexcept;
 		} m_owner;
 		//memory
 		char* m_memory;

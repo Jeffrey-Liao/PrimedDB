@@ -3,9 +3,16 @@ USELIAOUTIL;
 USESTD;
 namespace liao::PrimedDB
 {
-	Block::OwnerInfo::OwnerInfo(OwnerInfo&& move)
-		:m_ownerName(std::move(move.m_ownerName)),m_available(std::move(move.m_available)),m_beginLine(move.m_beginLine)
+	Block::OwnerInfo::OwnerInfo(OwnerInfo&& move) noexcept
+		:m_ownerName(move.m_ownerName),m_available(move.m_available),m_beginLine(move.m_beginLine)
 	{}
+	Block::OwnerInfo& Block::OwnerInfo::operator=(Block::OwnerInfo&& move) noexcept
+	{
+		m_ownerName = move.m_ownerName;
+		m_available = move.m_available;
+		m_beginLine = move.m_beginLine;
+		return *this;
+	}
 	void Block::allocate(const std::shared_ptr<char> source, unsigned size)
 	{
 		
@@ -150,7 +157,7 @@ namespace liao::PrimedDB
 	void Block::modify(unsigned index, unsigned byteSize, std::shared_ptr<char>& memory, int size)
 	{
 		if (size < byteSize)
-			ErrorManager::Get().set(ErrorLevel::Error, "InvalidArgument", "Given memory size is smaller than memory want to be get");
+			ErrorManager::Get().set(ErrorLevel::Error, "InvalidArgument", "Given memory size is smaller than memory want to be get", Infor::ClassInfor(THISFUNC,THISFILE));
 		WriteLock lock(m_mutex);
 		char* ptr = m_memory + index * byteSize;
 		memcpy_s(ptr, byteSize, memory.get(), byteSize);

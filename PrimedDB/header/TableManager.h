@@ -6,6 +6,8 @@ namespace liao::PrimedDB
 	{
 		INVITESINGLETON;
 		std::vector<TablePtr> m_tables;
+		//read all table information from tables.struct
+		TableManager();
 	public:
 		bool exist()const;
 		void createSchema(User& creator, std::string& name);

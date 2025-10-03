@@ -17,7 +17,7 @@ namespace liao::Util
 		const unsigned int m_enlargeSize = 512;//the enlarge number for Primize Algorithm
 		unsigned int m_blockNumber = 256;//the number of blocks
 		unsigned int m_blockSize = 4;//the size of a block
-		constexpr unsigned m_kbConvert = 1024;
+		const unsigned m_kbConvert = 1024;
 		unsigned int m_sessionNumber = 10;//the number of sessions
 		unsigned int m_port = 1010;
 		const unsigned int m_nameSize = 50;
