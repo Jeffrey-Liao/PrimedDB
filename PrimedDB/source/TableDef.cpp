@@ -1,214 +1,434 @@
+#include "BlockManager.h"
 #include "Table.h"
 #include "User.h"
+#include "UserManager.h"
 USESTD;
 namespace liao::PrimedDB
 {
-	Table::Table(Table&& move)
-		:m_owner(move.m_owner),m_permission(move.m_permission),m_name(std::move(move.m_name)),m_columns(std::move(move.m_columns)),m_recordNumber(move.m_recordNumber)
+	Table::Table(Table&& move) noexcept
+		:m_name(std::move(move.m_name)),m_available(std::move(move.m_available)),m_permission(move.m_permission), m_size(move.m_size), m_ownerId(std::move(move.m_ownerId)), m_columns(std::move(move.m_columns)),m_byteSize(move.m_byteSize),m_primedSize(move.m_primedSize), m_pendingOperations(std::move(move.m_pendingOperations)),m_recordByte(move.m_recordByte)
 	{}
-	Table::Table(User& owner, std::string& name, UserLevel permission)
-		:m_owner(owner),m_permission(permission)
+	Table::Table(const std::string& fileLine)
 	{
-		createTableDefFile();
+		vector<string> labels;
+        construct( labels,fileLine);
+	}
+	Table::Table(const std::string& fileLine, std::vector<std::string>& labels)
+	{
+		construct(labels, fileLine);
+	}
+	Table::Table(std::string ownerId, std::string& name, UserLevel permission, set<Column>& columns)
+		:m_ownerId(std::move(ownerId)), m_permission(permission), m_byteSize{0}, m_primedSize{0},m_recordByte(0)
+	{
 		rename(name);
-	}
-	void Table::createTableDefFile()
-	{
-		ofstream file(m_name + ".def",ios::app);
-		if (file.is_open())
+		for (auto& column:columns)
 		{
-			file.close();
+			m_columns.emplace_back(std::move(column));
+		}
+		for (auto& column:m_columns)
+		{
+			m_byteSize += column.size();
+			m_primedSize += column.primed();
+			m_recordByte += column.primed();
 		}
 	}
-	bool Table::isEmpty()const
+	void Table::construct(vector<string>& labels,const std::string& fileLine)
 	{
-		return m_recordNumber == 0;
+		labels.clear();
+		StaticFunc::Split(labels, fileLine, ':');
+		size_t n = 0;
+        m_name = labels[n++];
+		StaticFunc::StringToVectorBool(m_available,labels[n++]);
+		m_permission = static_cast<UserLevel>(stoi(labels[n++]));
+		m_size = stoi(labels[n++]);
+		m_ownerId = labels[n++];
+		m_byteSize = stoi(labels[n++]);
+		m_primedSize = stoi(labels[n++]);
+		m_recordByte = stoi(labels[n++]);
+		for (;n < labels.size();++n)
+		{
+			m_columns.emplace_back(m_name,labels[n]);
+		}
 	}
-	void Table::constructFromFile()
+	std::pair<int, int> Table::convertBlockPos(unsigned position)
 	{
-		ifstream file(getName() + ".def");
-		if (file.fail())
-		{
-			createTableDefFile();
-		}
-		else
-		{
-			{
-				WriteLock lock(m_mutex);
-				file >> m_name;
-			}
-			vector<string> lines;
-			string cache;
-			cache.reserve(TABLE_NAME_LEN + USER_NAME_LEN + sizeof(UserLevel) + sizeof(size_t));
-            while (getline(file, cache))
-            {
-                lines.emplace_back(cache);
-            }
-			WriteLock lock(m_mutex);
-			for (auto& line:lines)
-			{
-				m_columns.emplace_back(new Column(*this,line));
-			}
-		}
-		file.close();
+		int recordPerBlock = Util::Setting::Get().getBlockSize()/byte();
+        return std::make_pair(position / recordPerBlock, position % recordPerBlock);
 	}
 
-	Table::Table(User& owner, const std::string& fileLine)
-		:m_owner(owner),m_permission(UserLevel::None)
+	void Table:: primize(UCharPtr& memory,unsigned byteSize,unsigned primedSize,unsigned recordSize)
 	{
-		constructFromFile();
+		char* origin = memory.release();
+		char* ptr = new char[primedSize + recordSize];
+		memset(ptr, 0, primedSize + recordSize);
+		Math::GmpBigNumber convert,recordNumber=1;
+		unsigned m = 0;
+		size_t count = 0;
+		for (unsigned n = 0; n < byteSize;m+=8)
+		{
+			unsigned size = byteSize - n;
+			if (size<4)
+			{
+				if (size == 1)
+					convert = static_cast<unsigned char>(*(origin + n));
+				else if (size == 2)
+					convert = static_cast<unsigned short>(*((unsigned short*)origin + n));
+				else
+				{
+					convert = (static_cast<uint32_t>(*(origin + n)) << 16) |
+						(static_cast<uint32_t>(*(origin + n + 1 )) << 8) |
+						(static_cast<uint32_t>(*(origin + n + 2)) << 0);
+				}
+			}
+			else
+				convert = static_cast<unsigned int>(
+					*((unsigned int*)(origin+n)));
+			Math::PrimeNumberConvert::generate_big(convert, 9);
+
+			recordNumber *= convert;
+			mpz_export(ptr + m, &count, Math::isBigEndian() ? 1 : -1, 1, 0, 0, convert.get_mpz_t());
+			n += 4;
+		}
+		mpz_export(ptr + m , nullptr, Math::isBigEndian() ? 1 : -1, 1, 0, 0, recordNumber.get_mpz_t());
+		count = 0;
+		memory.reset(ptr);
+		delete[] origin;
+	}
+	void Table::deprimize(UCharPtr& memory,unsigned byteSize,unsigned primedSize, unsigned recordSize)
+	{
+		char* origin = memory.release();
+		char* ptr = new char[byteSize];
+		memset(ptr, 0, byteSize);
+		Math::GmpBigNumber convert;
+		unsigned m = 0;
+		for (unsigned n =0 ;n< primedSize&&m< byteSize;n+=8)
+		{
+			mpz_import(convert.get_mpz_t(), 8, Math::isBigEndian() ? 1 : -1, 1, 0, 0, origin+n);
+			convert /= Util::Setting::Get().getEnlargeSize();
+			mpz_export(ptr + m, nullptr, Math::isBigEndian()? 1:-1, 1, 0, 0, convert.get_mpz_t());
+			unsigned size = byteSize - m;
+			if (size > 4)
+				m += 4;
+			else
+				m += size-1;
+		}
+		memory.reset(ptr);
+		delete[] origin;
+	}
+
+	bool Table::isEmpty()const
+	{
+		ReadLock lock(m_mutex);
+		return m_size == 0;
 	}
 	const std::string& Table::getName() const
 	{
 		ReadLock lock(m_mutex);
 		return m_name;
 	}
-	void Table::addColumn(std::string& name, short int byteSize)
-	{
-		WriteLock lock(m_mutex);
-		m_columns.emplace_back(new Column(name, byteSize, *this));
-	}
-	void Table::rename(std::string& name)
-	{
-
-		if (name != "null"&&!name.empty())
-		{
-			WriteLock lock(m_mutex);
-			m_name = std::move(name);
-		}
-	}
 	auto Table::findColumn(const std::string& name)
 	{
 		ReadLock lock(m_mutex);
-		for (auto iter = m_columns.begin(); iter != m_columns.end(); ++iter)
-		{
-			if ((*iter)->getName() == name)
+		return std::find_if(m_columns.begin(), m_columns.end(), [&name](const Column& column)
 			{
-				return iter;
-			}
-		}
-		return m_columns.end();
+				return column.getName() == name;
+			});
 	}
 	auto Table::findColumn(const std::string& name) const
 	{
 		ReadLock lock(m_mutex);
-		for (auto iter = m_columns.begin(); iter != m_columns.end(); ++iter)
-		{
-			if ((*iter)->getName() == name)
+		return std::find_if(m_columns.begin(), m_columns.end(), [&name](const Column& column)
 			{
-				return iter;
-			}
-		}
-		return m_columns.end();
+				return column.getName() == name;
+			});
 	}
-	bool Table::exist(const string& name) const
+	void Table::renameColumn(const std::string& name, std::string& newName)
+	{
+		WriteLock lock(m_mutex);
+		auto iter = findColumn(name);
+		if (iter != m_columns.end() && StaticFunc::ValidName(newName))
+		{
+            (*iter).rename(newName);
+		}
+	}
+	//check is given name belongs to a column in the table
+	bool Table::existColumn(const std::string& name) const
 	{
 		auto iter = findColumn(name);
 		ReadLock lock(m_mutex);
 		return iter != m_columns.end();
 	}
-	
+	std::vector<bool>& Table::getAvailable()
+	{
+		return m_available;
+	}
+	std::deque<int>& Table::getOwned()
+	{
+		return m_owned;
+	}
+	UserLevel Table::getPermission() const
+	{
+		ReadLock lock(m_mutex);
+		return m_permission;
+	}
+	void Table::setUnavailable(unsigned pos)
+	{
+		WriteLock lock(m_mutex);
+		m_available[pos] = false;
+	}
+	void Table::setAvailable(unsigned pos)
+	{
+		WriteLock lock(m_mutex);
+		m_available[pos] = true;
+	}
+	unsigned Table::incrementSize()
+	{
+		WriteLock lock(m_mutex);
+		m_size++;
+		m_available.emplace_back(true);
+		return m_size;
+	}
+	void Table::clear()
+	{
+		WriteLock lock(m_mutex);
+		for (auto& b : m_owned)
+		{
+			BlockManager::Get().drop(b);
+		}
+		m_owned.clear();
+		m_columns.clear();
+	}
+	unsigned Table::byte()const
+	{
+		ReadLock lock(m_mutex);
+		return m_byteSize;
+	}
+	unsigned Table::primedByte()const
+	{
+		ReadLock lock(m_mutex);
+		return m_primedSize;
+	}
+	bool Table::addColumn(std::string& name, unsigned byteSize, DataType type)
+	{
+		if (existColumn(name))
+			return false;
+		else
+		{
+			WriteLock lock(m_mutex);
+			m_columns.emplace_back(Column(name, byteSize, m_name, type));
+			m_byteSize+=byteSize;
+			m_primedSize += StaticFunc::ByteConvert(byteSize);
+			m_recordByte += m_primedSize;
+			return true;
+		}
+	}
 	void Table::dropColumn(const std::string& name)
 	{
 		auto iter = findColumn(name);
 		WriteLock lock(m_mutex);
 		if (iter != m_columns.end())
-        {
-            m_columns.erase(iter);
-        }
-	}
-
-	void Table::removeColumn(const std::string& name)
-	{
-		auto iter = findColumn(name);
-		WriteLock lock(m_mutex);
-		if (iter != m_columns.end())
 		{
-            m_columns.erase(iter);
+			m_columns.erase(iter);
 		}
 	}
-	void Table::resizeColumn(const std::string& name, short int byteSize)
+	bool Table::rename(std::string& name)
 	{
-		auto iter = findColumn(name);
-		auto& column = *(iter);
-		ReadLock lock(m_mutex);
-		if (iter != m_columns.end())
+		if (!TableManager::Get().exist(name)&&StaticFunc::ValidName(name))
 		{
-			column->resize(byteSize);
+			WriteLock lock(m_mutex);
+			m_name = std::move(name);
+			return true;
+		}
+		else
+		{
+			Util::ErrorManager::Get().set(Util::ErrorLevel::Warning, "NameInvalid", "Given name for rename operation is invalid or name is already exists.", Infor::ClassInfor(THISFUNC, THISFILE));
+			return false;
 		}
 	}
-	const ColumnPtr Table::getColumn(const std::string& name) const
-	{
-		auto iter = findColumn(name);
-		ReadLock lock(m_mutex);
-		if (iter != m_columns.end())
-		{
-			return *iter;
-		}
-		return nullptr;
-	}
-	const std::vector<ColumnPtr>& Table::getColumns() const
+	unsigned Table::byteSize()const
 	{
 		ReadLock lock(m_mutex);
-		return m_columns;
+		return m_byteSize;
 	}
-	size_t Table::getRecordNumber() const
+	unsigned Table::totalByte()const
 	{
 		ReadLock lock(m_mutex);
-		return m_recordNumber;
+		return m_primedSize+m_recordByte;
 	}
-	void Table::increaseRecordNumber()
-	{
-        WriteLock lock(m_mutex);
-		m_recordNumber++;
-	}
-	const User& Table::getOwner() const
+	size_t Table::size() const
 	{
 		ReadLock lock(m_mutex);
-		return m_owner;
+		return m_size;
 	}
-	void Table::clear()
+	const string& Table::getOwnerId() const
 	{
-		WriteLock lock(m_mutex);
-		m_columns.clear();
+		ReadLock lock(m_mutex);
+		return m_ownerId;
 	}
-	void Table::updateFile()
-	{
-		ofstream file(m_name + ".def",ios::trunc);
-		if (!file.fail()&&file.is_open())
-			file << toString();
-		file.close();
-	}
-	int Table::size()const
-	{
-		return m_columns.size();
-	}
-	string Table::toString() const
+	string Table::toString()
 	{
 		std::ostringstream oss;
         ReadLock lock(m_mutex);
-		oss<<format("{}:{}:{}:{}",m_owner.getName(), m_name,static_cast<int>(m_permission),this->m_recordNumber);
-		for (int n =0;n<this->size();++n)
+		oss << m_name << ":";
+		for (int n =0;n<m_available.size();++n)
 		{
-			if (n+1<size())
-			{
-				oss << "\n";
-			}
-			oss<<m_columns[n]->toString();
+			oss << m_available[n];
+		}
+		oss << ":";
+		oss<<static_cast<int>(m_permission) << ":";
+        oss << m_size << ":";
+        oss << m_ownerId << ":";
+		oss << m_byteSize << ":";
+		oss<< m_primedSize << ":";
+		oss << m_recordByte << ":";
+		for (int n = 0; n < m_columns.size(); ++n)
+		{
+			oss<<m_columns[n].toString();
+			if (n + 1 != m_columns.size())
+				oss << ":";
 		}
         return oss.str();
 	}
-	UserLevel Table::getPermission() const
+	void Table::insert(const std::string& userId, UCharPtr memory, unsigned size)
 	{
-		return m_permission;
+		auto blockPos = convertBlockPos(m_size);
+		WriteLock lock(m_mutex);
+		int blockIndex = m_owned.empty() || blockPos.first >= m_owned.size() ? -1 : m_owned[blockPos.first];
+		primize(memory,m_byteSize,m_primedSize,m_recordByte);
+		m_pendingOperations.emplace(Transection(userId, m_name, TransectionType::Insert, blockIndex, blockPos.second, size, std::move(memory)));
 	}
-	Table& Table::operator=(const Table& object)
+	void Table::update(const std::string& userId, unsigned position, UCharPtr memory, unsigned size)
 	{
-        m_name = object.m_name;
+		auto blockPos = convertBlockPos(position);
+		WriteLock lock(m_mutex);
+		m_pendingOperations.emplace(Transection(userId, m_name, TransectionType::Update, blockPos.first, blockPos.second, size, std::move(memory)));
+	}
+	void Table::remove(const std::string& userId, unsigned position)
+	{
+		auto blockPos = convertBlockPos(position);
+		WriteLock lock(m_mutex);
+		m_pendingOperations.emplace(Transection(userId, m_name, TransectionType::Delete, blockPos.first, blockPos.second));
+	}
+
+	void Table::commit()
+	{
+		WriteLock lock(m_mutex);
+		while (!m_pendingOperations.empty())
+		{
+			BlockManager::Get().operate(m_pendingOperations.front());
+			if (m_pendingOperations.front().getType() == TransectionType::Insert)
+				++m_size;
+			else if (m_pendingOperations.front().getType() == TransectionType::Delete)
+				--m_size;
+			m_pendingOperations.pop();
+		}
+	}
+	void Table::rollback(const string& name)
+	{
+		string buffer;
+		fstream tranFile(Util::Setting::Get().getDataDirectory() / (m_name + ".trs"),ios::ate);
+		if (!tranFile.is_open()|| tranFile.tellg() <=0) {
+			Util::ErrorManager::Get().set(Util::ErrorLevel::Warning, "TransactionFileNotFound", "Transaction file not found.", Infor::ClassInfor(THISFUNC, THISFILE));
+			tranFile.close();
+		}
+		tranFile.seekg(-1, std::ios::end);
+		char ch;
+		bool found = false;
+		while (tranFile.tellg() >= 0 && !found) {
+			tranFile.get(ch);
+			if (ch == '\n' || ch == '\r') { // 换行符
+				found = true;
+			}
+			else {
+				buffer = ch + buffer; // 添加到行开头
+			}
+			if (tranFile.tellg() > 0) {
+				tranFile.seekg(-2, std::ios::cur); // 向前移动两位（当前字符 + 1 位）
+			}
+			else {
+				break; // 到达文件开头
+			}
+		}
+		Transection transection(name,m_name,buffer,true);
+		BlockManager::Get().operate(transection);
+	}
+	void Table::addBlock(unsigned pos)
+	{
+		{
+			WriteLock lock(m_mutex);
+			m_owned.emplace_back(pos);
+		}
+		BlockManager::Get().get_noLock(pos).read();
+	}
+	void Table::dropBlock(unsigned pos)
+	{
+		WriteLock lock(m_mutex);
+		(*std::find(m_owned.begin(), m_owned.end(), pos)) = -1;
+	}
+	void Table::dropBlockAt(unsigned pos)
+	{
+		WriteLock lock(m_mutex);
+		m_owned[pos] = -1;
+	}
+	void Table::setOwner(const std::string& ownerid)
+	{
+		WriteLock lock(m_mutex);
+		m_ownerId = ownerid;
+	}
+	Record Table::select(const std::string& column, bool raw)
+	{
+		vector<char*> reference;
+		vector<ReadLock> locks;
+
+		if (column == "all")
+		{
+			for (size_t i = 0;i<m_owned.size(); ++i)
+			{
+				if (m_owned[i] == -1)
+				{
+					m_owned[i] = BlockManager::Get().allocate();
+				}
+				auto& block = BlockManager::Get().get_noLock(i);
+				locks.emplace_back(ReadLock(block.getMutex()));
+				for (unsigned i = 0;i< block.size();++i)
+				{
+                    reference.push_back(block.get_noLock(i));
+				}
+			}
+
+		}
+	}
+	Record Table::select(vector<string>&, bool raw)
+	{
+
+	}
+	void Table::setSize(unsigned newSize)
+	{
+		WriteLock lock(m_mutex);
+        m_size = newSize;
+	}
+	ShareMutex& Table::getMutex()
+	{
+		return m_mutex;
+	}
+	unsigned Table::blockSize()const
+	{
+		ReadLock lock(m_mutex);
+		return m_owned.size();
+	}
+	Table& Table::operator=(Table&& object) noexcept
+	{
+		WriteLock lock(m_mutex);
+		m_name = std::move(object.m_name);
+        m_available = std::move(object.m_available);
         m_permission = object.m_permission;
-        m_owner = object.m_owner;
-        m_columns = object.m_columns;
-        m_recordNumber = object.m_recordNumber;
+        m_size = object.m_size;
+        m_ownerId = std::move(object.m_ownerId);
+        m_byteSize = object.m_byteSize;
+        m_primedSize = object.m_primedSize;
+        m_recordByte = object.m_recordByte;
+        m_columns = std::move(object.m_columns);
+        m_pendingOperations = std::move(object.m_pendingOperations);
 		return *this;
 	}
 	Table::~Table()

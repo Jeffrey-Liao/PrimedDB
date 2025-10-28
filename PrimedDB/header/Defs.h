@@ -42,6 +42,6 @@ namespace  liao
 	using WriteLock = std::unique_lock<ShareMutex>;
 	using ReadLock = std::shared_lock<ShareMutex>;
 	using RecurMutex = std::recursive_mutex;
-	using UCharPtr = std::unique_ptr<char>;
-	using SCharPtr = std::shared_ptr<char>;
+	using UCharPtr = std::unique_ptr<char[]>;
+	using SCharPtr = std::shared_ptr<char[]>;
 }

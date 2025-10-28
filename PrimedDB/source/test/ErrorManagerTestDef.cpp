@@ -32,7 +32,7 @@ namespace liao::Test
 	void ErrorManagerTest::run()
 	{
 		cout << format("Test 1") << endl;
-		for (int n = 0;n<100;++n)
+		for (int n = 0;n<100000;++n)
 		{
 			set_error_Test();
 			set_level_name_message_Test();

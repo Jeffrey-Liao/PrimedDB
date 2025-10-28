@@ -5,32 +5,13 @@
 //.def file for structure definition. .inf file for informations. .dat file for data.
 namespace liao
 {
-	static ShareMutex CoutMutex;
-#define COLUMN_NAME_LEN 20
-#define TABLE_NAME_LEN 20
-#define USER_NAME_LEN 20
+#define COLUMN_NAME_LEN 50
+#define TABLE_NAME_LEN 50
+#define USER_NAME_LEN 50
 	namespace PrimedDB
 	{
-		class Table;
-		class User;
-		class Column;
 		//for column
-		enum class DataType :char
-		{
-			Null,
-			Int,
-			Varchar,
-			Number,
-			Text,
-			Time,
-			Date
-		};
-		enum class ColumnType :char
-		{
-			Primary,
-			Foreign,
-			Normal
-		};
+
 		enum class UserLevel :char
 		{
 			None,
@@ -44,19 +25,6 @@ namespace liao
 			System
 		};
 	}
-	enum class ErrorCode :char
-	{
-		Nothing,
-	};
-	enum class OperationTarget :char
-	{
-		None,
-		Table,
-		Column,
-		User,
-		Session,
-		Schema,
-	};
 
 	DYNAMIC
 	concept Numeric = std::integral<T> || std::floating_point<T>;
@@ -73,48 +41,28 @@ namespace liao
 			std::uniform_int_distribution<T> dis(lower, upper); // 均匀整数分布 [0, 99]
 			return dis(gen);
 		}
-		static std::string GetUniqueId(Math::HashType type = Math::HashType::SHA256);
+		static std::string GetUniqueId(Math::HashType type = Math::HashType::MD5);
+		static std::string GetHashKey(const std::string& seed,Math::HashType type = Math::HashType::MD5);
 		static void Split(std::vector<std::string>& out, const std::string& s, char delimiter);
 		static std::shared_ptr < std::fstream > OpenDataFile(const std::string& name);
-	};
-	class Configuration
-	{
-	public:
-		static Math::HashType UserIDHashType;
-		static std::string UserInforFile;
-	};
-
-
-	DYNAMIC
-	concept Concept_NullRefField = requires(T obj)
-	{
-		std::same_as<T,PrimedDB::Column>
-		|| std::same_as<T, PrimedDB::User>
-		|| std::same_as<T, PrimedDB::Table>;
-	};
-
-	template<Concept_NullRefField T>
-	class NullRefProvider
-	{
-		static T nullRef;
-	public:
-		static T& GetNullRef()
+		static unsigned ByteConvert(unsigned byte);
+		DYNAMICCON(std::integral)
+		static long long VectorSum(std::vector<T>& vec,size_t size = vec.size())
 		{
-			return nullRef;
+			if (size<=vec.size())
+			{
+				long long sum = 0;
+				for (size_t n = 0; n < size; ++n)
+				{
+					sum+=vec[n];
+				}
+				return sum;
+			}
+			return -1;
 		}
-		static bool isNullObject(const T& obj)
-		{
-			return obj.getName() == "null";
-		}
-	};
-	template<Concept_NullRefField T>
-	T NullRefProvider<T>::nullRef;
-	DYNAMIC
-	concept Concept_Singleton = requires
-	{
-		!std::is_default_constructible_v<T> &&
-			!std::is_copy_constructible_v<T> &&
-			!std::is_move_constructible_v<T>;
+		static void StringToVectorBool(std::vector<bool>& result, const std::string& data);
+		static bool ValidName(std::string& name);
+		static void SplitFast(std::vector<size_t>& delimiters, const std::string& str, char delimiter);
 	};
 
 }

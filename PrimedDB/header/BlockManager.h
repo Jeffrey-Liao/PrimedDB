@@ -1,6 +1,8 @@
 #pragma once
 #include "Block.h"
+#include "DataFile.h"
 #include "Singleton.h"
+#include "TableManager.h"
 #include "Transection.h"
 
 namespace liao::PrimedDB
@@ -8,39 +10,35 @@ namespace liao::PrimedDB
 	//file structure
 	//first line: byte size;
 	//second line: length of bits array, bit array.
-	class File
-	{
-	public:
-		std::shared_ptr<std::fstream> m_file;
-		int m_byteSize;
-		std::vector<bool> m_available;
-		std::deque<int> m_owned;
-		File() = default;
-		File(const std::string& name);
-		void dropBlock(int index);
-		void recover(int ownIndex,int index);
-		void addBlock(int index);
-		~File();
-	};
+	
 	class BlockManager:public Singleton<BlockManager>
 	{
-		static unsigned BlockPerRecord(int byteSize);
 		INVITESINGLETON;
-		
-		std::unordered_map<std::string, File> m_files;
 
-		//the index queue of m_blocks
-		std::deque<std::pair<size_t,std::string>> m_active;
+		std::deque<unsigned> m_active;
 		
 		//store all blocks, which will only enlarge the size.
 		std::vector<Block> m_blocks;
-
+		std::future<void> m_terminate;
+		std::atomic<bool> m_notify = false, m_end = false;
+		std::condition_variable m_cv;
+		std::deque<Transection> m_pendingOperations;
+		mutable ShareMutex m_mutex;
+		mutable Mutex m_cvMutex;
 
 		BlockManager();
-		int allocate(const std::string&);
+
+
+		void manager();
+		void rearrange(std::deque<int>&, std::vector<bool>&);
+		void handle(Transection&);
 	public:
-		void write(Table& table, unsigned linePos,std::shared_ptr<char>& memory);
-		void insert(Table& table, std::shared_ptr<char>& memory);
+		static unsigned totalRecord(unsigned bytes);
+		void operate(Transection&);
+		unsigned allocate();
+		void drop(unsigned pos);
+		Block& get_noLock(unsigned);
+		
 		~BlockManager();
 	};
 }

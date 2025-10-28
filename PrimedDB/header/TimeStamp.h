@@ -1,5 +1,4 @@
 #pragma once
-#include "ClassInfor.h"
 #include "Defs.h"
 namespace liao::Util {
     enum class TimeType:char
@@ -34,18 +33,19 @@ namespace liao::Util {
         void setTime(TimePoint& time);
         void convertToString(const TimePoint& time);
         void initializeString();
-        std::string toYear(std::string& date)const;
-        std::string toMonth(std::string& date)const;
-        std::string toDay(std::string& date)const;
-        std::string toHour(std::string& time)const;
-        std::string toMinute(std::string& time)const;
-        std::string toSecond(std::string& time)const;
+        static std::string toYear(std::string& date);
+        static std::string toMonth(std::string& date);
+        static std::string toDay(std::string& date);
+        static std::string toHour(std::string& time);
+        static std::string toMinute(std::string& time);
+        static std::string toSecond(std::string& time);
 
     public:
         TimeStamp();
         TimeStamp(TimePoint now);
         TimeStamp(const TimeStamp& obj);
         TimeStamp(TimeStamp&& obj) noexcept;
+        TimeStamp(long long);
         const std::string& getString();
         std::string&& moveString();
         long long getTimestamp() const;
@@ -56,6 +56,7 @@ namespace liao::Util {
         bool isEarlier(const TimeStamp& obj)const;
         bool isLater(const TimeStamp& obj)const;
         std::string get(TimeType)const;
+        std::string getDate() const;
         long long distance(const TimeStamp& obj) const;
         DYNAMICCON(Concept_TimeTypes)
         void add(T timeTypes)

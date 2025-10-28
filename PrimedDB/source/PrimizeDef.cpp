@@ -4,7 +4,7 @@
 using namespace std;
 namespace liao::Math
 {
-	Primize::Primize(std::unique_ptr<char> originData, unsigned int byteSize)
+	Primize::Primize(std::unique_ptr<char[]> originData, unsigned int byteSize)
 	{
 		m_primedMemory = primize(originData, byteSize);
 	}
@@ -18,11 +18,11 @@ namespace liao::Math
 	{
 		return m_primedMemory;
 	}
-	std::unique_ptr<char> Primize::getOriginData()
+	std::unique_ptr<char[]> Primize::getOriginData()
 	{
 		return deprimize(m_primedMemory);
 	}
-	GmpBigNumber Primize::primize(std::unique_ptr<char>& originData, unsigned int byteSize)
+	GmpBigNumber Primize::primize(std::unique_ptr<char[]>& originData, unsigned int byteSize)
 	{
 		char* origin = originData.get();
 		GmpBigNumber number;
@@ -30,22 +30,22 @@ namespace liao::Math
 		PrimeNumberConvert::generate_big(number);
 		return number;
 	}
-	std::unique_ptr<char> Primize::deprimize(GmpBigNumber& primedData)
+	std::unique_ptr<char[]> Primize::deprimize(GmpBigNumber& primedData)
 	{
 		GmpBigNumber number = primedData/ ENLARGE_SIZE;
 		return toString(number);
 	}
-	GmpBigNumber Primize::fromString(std::unique_ptr<char>& data,unsigned int byteSize)
+	GmpBigNumber Primize::fromString(std::unique_ptr<char[]>& data,unsigned int byteSize)
 	{
 		GmpBigNumber number;
 		mpz_import(number.get_mpz_t(), byteSize, isBigEndian() ? 1 : -1, sizeof(unsigned int), 0, 0, data.get());
 		return number;
 	}
-	std::unique_ptr<char> Primize::toString(GmpBigNumber& primedData)
+	std::unique_ptr<char[]> Primize::toString(GmpBigNumber& primedData)
 	{
 		void* result = nullptr;
 		size_t actualSize;
 		result = mpz_export(nullptr, &actualSize, isBigEndian() ? 1 : -1, sizeof(unsigned char), 0, 0, primedData.get_mpz_t());
-		return std::unique_ptr<char>(static_cast<char*>(result));
+		return std::unique_ptr<char[]>(static_cast<char*>(result));
 	}
 }

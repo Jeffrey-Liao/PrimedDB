@@ -12,6 +12,11 @@ namespace liao::Util
 			return std::chrono::duration_cast<TimeType>(std::chrono::system_clock::now().time_since_epoch());
 		}
 	public:
+		Timer()
+			:m_timer(now())
+		{
+			start();
+		}
 		Timer(TimeType time)
 			:m_timer(time)
 		{

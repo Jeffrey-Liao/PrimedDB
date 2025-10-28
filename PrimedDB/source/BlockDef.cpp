@@ -3,26 +3,21 @@ USELIAOUTIL;
 USESTD;
 namespace liao::PrimedDB
 {
-	Block::OwnerInfo::OwnerInfo(OwnerInfo&& move) noexcept
-		:m_ownerName(move.m_ownerName),m_available(move.m_available),m_beginLine(move.m_beginLine)
-	{}
-	Block::OwnerInfo& Block::OwnerInfo::operator=(Block::OwnerInfo&& move) noexcept
-	{
-		m_ownerName = move.m_ownerName;
-		m_available = move.m_available;
-		m_beginLine = move.m_beginLine;
-		return *this;
-	}
 	void Block::allocate(const std::shared_ptr<char> source, unsigned size)
 	{
-		
+		WriteLock lock(m_mutex);
 		if (m_memory == nullptr)
-            m_memory = new char[Util::Setting::Get().getBlockSize()];
+		{
+			m_memory = new char[Util::Setting::Get().getBlockSize()];
+		}
 		if (source != nullptr)
 			memcpy_s(m_memory, Util::Setting::Get().getBlockSize(), source.get(), size);
+		else
+			memset(m_memory, 0, Util::Setting::Get().getBlockSize());
 	}
 	void Block::deallocate()
 	{
+		WriteLock lock(m_mutex);
 		if (m_memory != nullptr)
             delete[] m_memory;
 		m_memory = nullptr;
@@ -38,18 +33,15 @@ namespace liao::PrimedDB
 		move.m_memory = nullptr;
 		move.m_id = StaticFunc::GetUniqueId(Setting::Get().getUserIDHashType());
 	}
-	void Block::assign(std::shared_ptr<std::string>& ownerName, std::shared_ptr<std::vector<bool>>& ownerAvailableSet, unsigned lineNumber)
+	void Block::assign(TablePtr owner, unsigned pos)
 	{
-		m_owner.m_available = ownerAvailableSet;
-        m_owner.m_ownerName = ownerName;
-        m_owner.m_beginLine = lineNumber;
-	}
-	void Block::resize()
-	{
-		char* ptr = new char[Setting::Get().getBlockSize()];
-		memcpy_s(ptr, Setting::Get().getBlockSize(), m_memory, m_size);
-        deallocate();
-        m_memory = ptr;
+		{
+			WriteLock lock(m_mutex);
+			m_owner = owner;
+			m_start = pos;
+			m_size = 0;
+			read();
+		}
 	}
 	//check two Blocks are same object or not
 	bool Block::same(const Block& object) const
@@ -62,7 +54,52 @@ namespace liao::PrimedDB
 	{
 		ReadLock lock(m_mutex);
 		int cmpSize = min(m_size, object.m_size);
-		return std::memcmp(m_memory,object.m_memory,cmpSize);
+		return std::memcmp(m_memory, object.m_memory, cmpSize)==0;
+	}
+	unsigned Block::max() const
+	{
+		ReadLock lock(m_mutex);
+		return Setting::Get().getBlockSize()/m_owner->totalByte();
+	}
+	void Block::read()
+	{
+		if (!empty())
+		{
+			fstream file;
+			{
+				WriteLock lock(m_mutex);
+				file.open(Setting::Get().getDataDirectory() / (m_owner->getName() + ".dat"), ios::in | ios::binary);
+				file.seekg(m_start);
+				while (m_size < max())
+				{
+					file.getline(m_memory, Setting::Get().getBlockSize());
+					m_size++;
+					if (max() - m_size < m_owner->totalByte())
+						break;
+				}
+
+			}
+            file.close();
+		}
+	}
+	void Block::flush()
+	{
+		if (!empty())
+		{
+			fstream file; {
+				WriteLock lock(m_mutex);
+				auto dir = Setting::Get().getDataDirectory() / (m_owner->getName() + ".dat");
+				file.open(dir, ios::out | ios::binary);
+				file.seekg(m_start*m_owner->totalByte());
+				file.write(m_memory, m_size * m_owner->totalByte());
+			}
+			file.close();
+		}
+	}
+	void Block::update(unsigned location, std::shared_ptr<char[]> memory)
+	{
+		WriteLock lock(m_mutex);
+        memcpy_s(m_memory + location * m_owner->totalByte(), m_owner->totalByte(), memory.get(), m_owner->totalByte());
 	}
 	bool Block::operator==(const Block& object) const
 	{
@@ -76,105 +113,76 @@ namespace liao::PrimedDB
         m_size = move.m_size;
         move.m_memory = nullptr;
         move.m_id = StaticFunc::GetUniqueId(Setting::Get().getUserIDHashType());
-		
-
 		return *this;
-	}
-	//return success(true) fail(false)
-	unsigned int Block::write(std::string& memory, unsigned byteSize)
-	{
-        return write(shared_ptr<char>(memory.data()), memory.size(), byteSize);
-	}
-	unsigned int Block::write(std::shared_ptr<char> memory, unsigned size, unsigned byteSize)
-	{
-		if (empty())
-			allocate();
-		int allowedNumber = Setting::Get().getBlockSize() / byteSize;
-		int writeNumber = size / byteSize;
-		int overflow = writeNumber - allowedNumber;
-		overflow = overflow > 0 ? overflow : 0;
-		char* ptr;
-		{
-			ReadLock lock(m_mutex);
-			ptr = m_memory;
-		}
-		for (int n = 0; n < allowedNumber; ++n)
-		{
-			WriteLock lock(m_mutex);
-			memcpy_s(ptr, byteSize, memory.get(), byteSize);
-			ptr += byteSize;
-		}
-		{
-			WriteLock lock(m_mutex);
-			m_recordSize = allowedNumber;
-			m_size = writeNumber * byteSize;
-		}
-		return overflow;
-	}
-	void Block::write(std::shared_ptr<std::fstream> file, unsigned byteSize)
-	{
-		if (empty())
-			allocate();
-		int allowedNumber = Setting::Get().getBlockSize() / byteSize;
-		{
-			WriteLock lock(m_mutex);
-			file->getline(m_memory, allowedNumber * byteSize);
-			m_size = file->gcount();
-			m_recordSize = allowedNumber;
-		}
-	}
-	unsigned Block::reocrdSize() const
-	{
-		return m_recordSize;
 	}
 	bool Block::empty() const
 	{
 		ReadLock lock(m_mutex);
-		return m_memory == nullptr;
+		return m_memory == nullptr||m_owner == nullptr;
 	}
 	unsigned int Block::size() const
 	{
 		ReadLock lock(m_mutex);
 		return m_size;
 	}
-	const char* Block::reference() const
+	char* Block::reference()
 	{
 		ReadLock lock(m_mutex);
 		return m_memory;
 	}
-	void Block::remove(unsigned index) const
-	{
-		(*m_owner.m_available)[m_owner.m_beginLine + index] = false;
-	}
-	bool Block::insert(unsigned byteSize, std::shared_ptr<char> memory)
-	{
-		if (m_size+byteSize > Setting::Get().getBlockSize())
-			return false;
-		char* ptr = m_memory + m_size;
-        memcpy_s(ptr, byteSize, memory.get(), byteSize);
-		return true;
-	}
-	void Block::modify(unsigned index, unsigned byteSize, std::shared_ptr<char>& memory, int size)
-	{
-		if (size < byteSize)
-			ErrorManager::Get().set(ErrorLevel::Error, "InvalidArgument", "Given memory size is smaller than memory want to be get", Infor::ClassInfor(THISFUNC,THISFILE));
-		WriteLock lock(m_mutex);
-		char* ptr = m_memory + index * byteSize;
-		memcpy_s(ptr, byteSize, memory.get(), byteSize);
-	}
-	const char* Block::get(unsigned index, unsigned byteSize)const
+
+	unsigned Block::byte() const
 	{
 		ReadLock lock(m_mutex);
-		return m_memory + index * byteSize;
+		return m_owner->totalByte();
 	}
-	UCharPtr Block::release()
+	void Block::remove(unsigned index) const
 	{
 		WriteLock lock(m_mutex);
-		char* ptr= m_memory;
-		m_memory = nullptr;
-		return UCharPtr(ptr);
+		m_owner->setUnavailable(m_start + index);
+		--m_size;
 	}
+	std::pair<unsigned, std::shared_ptr<char[]>> Block::insert(std::shared_ptr<char[]> memory, int number)
+	{
+		unsigned l_byte = byte();
+		int left = Setting::Get().getBlockNumber() / l_byte - m_size;
+		unsigned int overflow = 0;
+		if (number>left)
+		{
+			overflow = number - left;
+		}
 
+		char* mem = memory.get();
+		{
+			WriteLock lock(m_mutex);
+			memcpy_s(m_memory + m_size * l_byte, l_byte * number, memory.get(), l_byte * number);
+			m_size++;
+			if (overflow != 0)
+				memcpy_s(memory.get(), l_byte * overflow, memory.get() + l_byte * (number - overflow), l_byte * overflow);
+		}
+		flush();
+		return std::make_pair(overflow, std::move(memory));
+	}
+	
+	char* Block::get_noLock(unsigned index)
+	{
+		return m_memory + index * byte();
+	}
+	void Block::drop(unsigned index)
+	{
+		WriteLock lock(m_mutex);
+		m_owner->dropBlock(index);
+		m_owner = nullptr;
+	}
+	double Block::percentage() const
+	{
+		ReadLock lock(m_mutex);
+		return m_size / max();
+	}
+	ShareMutex& Block::getMutex()
+	{
+		return m_mutex;
+	}
 	Block::~Block()
 	{
 		deallocate();

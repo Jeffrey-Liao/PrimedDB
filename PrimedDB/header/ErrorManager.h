@@ -4,6 +4,7 @@
 #include <stack>
 
 #include "TimeStamp.h"
+#include "ClassInfor.h"
 #include "Singleton.h"
 
 namespace liao::Util
@@ -47,7 +48,7 @@ namespace liao::Util
         std::unordered_map <ErrorLevel, std::vector<ErrorHandler>> m_serviceByLevel;
         std::atomic<bool> end = false;
         mutable ShareMutex m_mutex;
-        mutable ShareMutex m_errorMutex;
+        mutable ShareMutex m_handleMutex;
         mutable std::mutex m_cvmutex;
         std::atomic<bool> m_reported = false;
         std::future<void> m_asyncTerminate;
@@ -60,10 +61,11 @@ namespace liao::Util
         void set(Error& error);
         void set(ErrorLevel level, std::string& error,std::string& errorMessage,const Infor::ClassInfor& info);
         void set(ErrorLevel level, std::string_view error, std::string_view errorMessage,const Infor::ClassInfor& info);
+        void set(ErrorLevel level, std::string_view error, std::string_view errorMessage);
         template<class F, class... Args>
         void subscribe(ErrorLevel level, F&& func, Args&&... args)
         {
-            WriteLock lock(m_mutex);
+            WriteLock lock(m_handleMutex);
             m_serviceByLevel[level].emplace_back(
                 [func = std::forward<F>(func), args_tuple = std::make_tuple(std::forward<Args>(args)...)](Error& error) mutable
                 {
@@ -78,7 +80,7 @@ namespace liao::Util
         template<class F, class... Args>
         void subscribe(std::string_view error, F&& func, Args&&... args)
         {
-            WriteLock lock(m_mutex);
+            WriteLock lock(m_handleMutex);
             m_serviceByName[error.data()].emplace_back(
                 [func = std::forward<F>(func), args_tuple = std::make_tuple(std::forward<Args>(args)...)]() mutable
                 {

@@ -11,7 +11,6 @@ namespace liao
 		Singleton& operator=(Singleton&&) = delete;
 	protected:
 		Singleton() = default;
-		static ShareMutex m_mutex;
 
 	public:
 		static T& Get()

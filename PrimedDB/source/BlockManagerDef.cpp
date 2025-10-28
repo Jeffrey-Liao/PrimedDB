@@ -3,99 +3,170 @@
 
 namespace liao::PrimedDB
 {
-	unsigned BlockManager::BlockPerRecord(int byteSize)
+	BlockManager::BlockManager()
 	{
-		return Util::Setting::Get().getBlockSize() / byteSize;
-	}
-	File::File(const std::string& name)
-		:m_file(StaticFunc::OpenDataFile(name))
-	{
-		int size;
-		char* buffer = nullptr;
-		if (m_file != nullptr)
+		m_blocks.resize(Util::Setting::Get().getBlockNumber());
+		m_active.resize(m_blocks.size());
+		m_terminate = std::async(std::launch::async, &BlockManager::manager,this);
+		for (int n = 0;n<m_blocks.size();++n)
 		{
-			(*m_file) >> m_byteSize;
-			(*m_file) >> size;
-			m_available.reserve(size);
-			buffer = new char[size = size/8];
-            (*m_file).read(buffer, size);
-			for (size_t byte_idx = 0; byte_idx < size; ++byte_idx) {
-				unsigned char current_byte = static_cast<unsigned char>(buffer[byte_idx]);
+			m_active[n];
+		}
+	}
+	void BlockManager::manager()
+	{
+		Lock lock(m_cvMutex);
+		while (true)
+		{
+			m_cv.wait(lock, [this]()
+			{
+					return m_notify||m_end;
+			});
+			
+			while (!m_pendingOperations.empty())
+			{
+				Transection transection;
+				{
+					WriteLock lock(m_mutex);
+					transection = std::move(m_pendingOperations.front());
+					m_pendingOperations.pop_front();
+				}
+				handle(transection);
+			}
+			m_notify = false;
+			if (m_end)
+				break;
+		}
+	}
 
-				// 一次性处理一个字节的所有比特
-				for (int bit_idx = 7; bit_idx >= 0; --bit_idx) {
-					m_available.push_back((current_byte >> bit_idx) & 1);
+	unsigned BlockManager::allocate()
+	{
+		unsigned pos;
+		{
+			WriteLock lock(m_mutex);
+			pos = m_active.front();
+			while (!m_blocks[pos].getMutex().try_lock());
+			m_active.pop_front();
+			m_active.push_back(pos);
+		}
+		return pos;
+	}
+	void BlockManager::handle(Transection& transection)
+	{
+		if (transection.isValid())
+		{
+			transection.setInvalid();
+			auto memory = transection.getMemory();
+			unsigned position = transection.getBlockId();
+			auto table = TableManager::Get().get_noLock(transection.getTable());
+			unsigned location = transection.getLocation();
+			if (transection.getType() == TransectionType::Insert)
+			{
+				std::pair<unsigned, std::shared_ptr<char[]>> result = std::make_pair(transection.size(), memory);
+				do
+				{
+					if (position == -1)
+					{
+						position = allocate();
+						transection.setBlockId(position);
+						{
+							m_blocks[position].getMutex().unlock();
+							m_blocks[position].assign(table, table->getOwned().size()*totalRecord(table->totalByte()));
+						}
+						table->addBlock(position);
+					}
+					result = m_blocks[position].insert(result.second, result.first);
+					position = result.first == 0 ? 0 : -1;
+				}
+				while (result.first > 0);
+				table->incrementSize();
+			}
+			else if (transection.getType() == TransectionType::Update)
+			{
+				if (position == -1)
+				{
+					Util::ErrorManager::Get().set(Util::ErrorLevel::Error, "BlockIdError", "Given block id is incorrect.", Infor::ClassInfor(THISFUNC, THISFILE));
+					return;
+				}
+				m_blocks[position].update(location, memory);
+			}
+			else if (transection.getType() == TransectionType::Delete)
+			{
+				if (position == -1)
+				{
+					Util::ErrorManager::Get().set(Util::ErrorLevel::Error, "BlockIdError", "Given block id is incorrect.", Infor::ClassInfor(THISFUNC, THISFILE));
+					return;
+				}
+				m_blocks[position].remove(location);
+				if (m_blocks[position].percentage() < 0.5)
+				{
+					rearrange(table->getOwned(), table->getAvailable());
 				}
 			}
+
 		}
-		delete[] buffer;
+		
 	}
-	File::~File()
+	unsigned BlockManager::totalRecord(unsigned bytes)
 	{
-		m_file->close();
+		return Util::Setting::Get().getBlockNumber() / bytes;
 	}
-	void File::dropBlock(int index)
+	void BlockManager::operate(Transection& transection)
 	{
-		auto iter = std::find(m_owned.begin(), m_owned.end(), index);
-		if (iter != m_owned.end())
-			*iter = -1;
+		WriteLock lock(m_mutex);
+		m_pendingOperations.emplace_back(std::move(transection));
+		m_notify = true;
+		m_cv.notify_one();
 	}
-	BlockManager::BlockManager()
-		:m_blocks(Util::Setting::Get().getBlockNumber())
+	void BlockManager::rearrange(std::deque<int>& owned, std::vector<bool>& available)
 	{
-		auto& value = TableManager::Get().all();
-        for (auto& table : value) {
-			m_files.emplace(table->getName(), File(table->getName()));
+		std::vector<char*> memory;
+		unsigned byteSize = 0;
+		std::vector<ReadLock> locks;
+		for (unsigned n =0;n<owned.size();++n)
+		{
+			if (byteSize == 0)
+			{
+				byteSize = m_blocks[n].byte();
+			}
+			for (unsigned m = 0;m<m_blocks[n].size();++m)
+			{
+				locks.emplace_back(m_blocks[n].getMutex());
+				memory.push_back(m_blocks[n].get_noLock(m));
+			}
 		}
+		unsigned fast = 0, slow =0;
+		for (;fast<available.size();++fast)
+		{
+			if (!available[fast])
+			{
+				memcpy_s(memory[slow],byteSize,memory[fast],byteSize);
+				available[slow] = true;
+				slow = fast;
+			}
+		}
+	}
+	void BlockManager::drop(unsigned pos)
+	{
+		if (m_active.empty())
+		{
+			m_active.erase(std::find(m_active.begin(), m_active.end(), pos));
+			m_active.push_back(pos);
+			m_blocks[pos].drop(pos);
+		}
+	}
+	Block& BlockManager::get_noLock(unsigned pos)
+	{
+		return m_blocks[pos];
 	}
 	BlockManager::~BlockManager()
 	{
-		m_files.clear();
-        m_active.clear();
-		m_blocks.clear();
-	}
-	int BlockManager::allocate(const std::string& name)
-	{
-		std::pair<int, std::string> pair = std::make_pair(0, "");
-		if (!m_active.empty())
-		{
-			if (m_active.size()==m_blocks.size())
-			{
-				pair = m_active.front();
-                m_active.pop_front();
-                m_files[pair.second].dropBlock(pair.first);
-				pair.second = name;
-			}
-			else
-			{
-				pair.first = m_active.back().first+1;
-				pair.second = name;
-			}
-		}
-		m_active.emplace_back(pair);
-		return pair.first;
-	}
-	void BlockManager::write(Table& table, unsigned linePos, std::shared_ptr<char>& memory)
-	{
-		File& file = m_files[table.getName()];
-		if (linePos > file.m_available.size())
-		{
-			Util::ErrorManager::Get().set(Util::ErrorLevel::Error, "IndexOutRange", "Given line number is bigger than the max size of table",Infor::ClassInfor(THISFUNC,THISFILE));
-		}
-		int blockIndex = linePos/BlockPerRecord(file.m_byteSize),
-			lineIndex = linePos % BlockPerRecord(file.m_byteSize);
-		m_blocks[file.m_owned[blockIndex]].modify(lineIndex,file.m_byteSize,memory,file.m_byteSize);
-	}
-	void BlockManager::insert(Table& table, std::shared_ptr<char>& memory)
-	{
-		File& file = m_files[table.getName()];
-		int index= file.m_owned.back();
-		while (!m_blocks[index].insert(file.m_byteSize,memory))
-		{
-			index = allocate(table.getName());
-			file.addBlock(index);
-            m_blocks[index].insert(file.m_byteSize,memory);
-		}
 
+		m_end = true;
+		m_notify = true;
+		if (m_terminate.valid())
+			m_terminate.get();
+		m_blocks.clear();
+		TableManager::Get().clear();
 	}
 }

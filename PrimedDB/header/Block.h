@@ -1,55 +1,49 @@
 #pragma once
 #include "Global.h"
 #include "Setting.h"
-
+#include "Table.h"
 namespace liao::PrimedDB
 {
 	class Block
 	{
 		std::string m_id;
-		struct OwnerInfo
-		{
-			std::shared_ptr<std::string> m_ownerName;
-			std::shared_ptr<std::vector<bool>> m_available;
-			unsigned m_beginLine;
-
-			OwnerInfo() = default;
-			OwnerInfo(OwnerInfo&&) noexcept;
-			OwnerInfo& operator=(OwnerInfo&&) noexcept;
-		} m_owner;
+		TablePtr m_owner;
 		//memory
-		char* m_memory;
-		//size of how many valid bytes in memory
-		unsigned int m_size;
+		bool m_write = false;
+		char* m_memory = nullptr;
 		//size of how many record in memory
-		unsigned m_recordSize;
+		mutable unsigned int m_size;
+		//the position of the first record in table
+		unsigned m_start;
+		
 		mutable ShareMutex m_mutex;
-		void allocate(const std::shared_ptr<char> source = nullptr, unsigned size = 0);
+		void allocate(std::shared_ptr<char> source = nullptr, unsigned size = 0);
 		void deallocate();
 
+		
 	public:
 		Block();
 		Block(Block&)=delete;
 		Block(Block&&) noexcept;
-		void assign(std::shared_ptr<std::string>&, std::shared_ptr<std::vector<bool>>&, unsigned);
+		void assign(TablePtr, unsigned);
 		//check two Blocks are same object or not
 		bool same(const Block&) const;
 		//compare content in memory
 		bool equal(const Block&) const;
-		void resize();
-		//return success(true) fail(false)
-		unsigned int write(std::string&,unsigned byteSize);
-		unsigned int write(std::shared_ptr<char>, unsigned size, unsigned byteSize);
-		void write(std::shared_ptr<std::fstream> file, unsigned byteSize);
+		unsigned max() const;
+		void read();
+		void flush();
+		void update(unsigned location,std::shared_ptr<char[]> memory);
 		bool empty() const;
 		unsigned int size() const;
-		unsigned reocrdSize() const;
-		const char* reference() const;
+		unsigned byte() const;
+		char* reference();
 		void remove(unsigned index) const;
-		bool insert(unsigned byteSize, std::shared_ptr<char> memory);
-		void modify(unsigned index, unsigned byteSize, std::shared_ptr<char>& memory,int size);
-		const char* get(unsigned index, unsigned byteSize)const;
-		UCharPtr release();
+		std::pair<unsigned, std::shared_ptr<char[]>> insert(std::shared_ptr<char[]> memory,int number);
+		char* get_noLock(unsigned index);
+		void drop(unsigned index);
+		double percentage() const;
+		ShareMutex& getMutex();
 		//==same
 		bool operator==(const Block&)  const;
 		Block& operator=(Block&&) noexcept;

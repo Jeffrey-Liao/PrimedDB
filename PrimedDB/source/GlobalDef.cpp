@@ -1,7 +1,6 @@
 #include "Global.h"
 #include <sstream>
 #include <random>
-
 #include "Setting.h"
 USESTD;
 USECRPT;
@@ -14,20 +13,68 @@ namespace liao {
 		container.generate(timeStamp.getString() + to_string(random),type);
 		return container.getHashHex();
 	}
+	std::string StaticFunc::GetHashKey(const std::string& seed, Math::HashType type)
+	{
+		Math::HashContainer container;
+		container.generate(seed, type);
+		return container.getHashHex();
+	}
 	void StaticFunc::Split(vector<string>& out,const string& s, char delimiter)
 	{
-		string token;
-		istringstream tokenStream(s);
-		while (getline(tokenStream, token, delimiter)) {
-			out.push_back(token);
+		if (!s.empty())
+		{
+			string token;
+			istringstream tokenStream(s);
+			while (getline(tokenStream, token, delimiter)) {
+				out.push_back(token);
+			}
 		}
+
 	}
 	std::shared_ptr<fstream> StaticFunc::OpenDataFile(const std::string& name)
 	{
-		shared_ptr<fstream> filePtr = make_shared<fstream>(Util::Setting::Get().getDataDirectory().data()+name+".dat",ios::in | ios::out | ios::binary);
+		if (!filesystem::exists(Util::Setting::Get().getDataDirectory()))
+		{
+			filesystem::create_directories(Util::Setting::Get().getDataDirectory());
+		}
+		shared_ptr<fstream> filePtr = make_shared<fstream>(Util::Setting::Get().getDataDirectory()/(name+".dat"),ios::in | ios::out | ios::binary);
 		return filePtr;
 	}
-	Math::HashType Configuration::UserIDHashType = Math::HashType::MD5;
-	string Configuration::UserInforFile = "users.dat";
+	void StaticFunc::StringToVectorBool(std::vector<bool>& result, const std::string& data)
+	{
+		result.clear();
+		result.reserve(data.size());  // 预分配空间
+		for (int n = 0;n<data.size();++n)
+		{
+			result[n] = data[n];
+		}
+	}
+	unsigned StaticFunc::ByteConvert(unsigned byte)
+	{
+		int divide = byte / 4;
+		divide += byte % 4 == 0? 0: 1;
+		return divide * 8;
+	}
+	bool StaticFunc::ValidName(std::string& name)
+	{
+		if (name.size()>COLUMN_NAME_LEN)
+            return false;
+		for (auto& c : name)
+		{
+			if (!((c>='a'&&c<='z')||(c>='A'&&c<='Z')||(c>='0'&&c<='9')))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+	void StaticFunc::SplitFast(std::vector<size_t>& delimiters, const std::string& str, char delimiter)
+	{
+		for (size_t i = 0; i < str.size(); ++i)
+		{
+			if (str[i] == delimiter)
+				delimiters.push_back(i);
+		}
+	}
 
 }

@@ -32,29 +32,33 @@ namespace liao::Util
         WriteLock lock(m_mutex);
         m_literal = format("{:%Y-%m-%d %H:%M:%S}", time);
     }
-    std::string TimeStamp::toYear(std::string& date) const
+    std::string TimeStamp::toYear(std::string& date)
     {
         return date.substr(0, date.find("-"));
     }
-    std::string TimeStamp::toMonth(std::string& date)const
+    std::string TimeStamp::toMonth(std::string& date)
     {
         return date.substr(date.find("-") + 1, date.find_last_of("-") - date.find("-") - 1);
     }
-    std::string TimeStamp::toDay(std::string& date)const
+    std::string TimeStamp::toDay(std::string& date)
     {
         return date.substr(date.find_last_of("-") + 1);
     }
-    std::string TimeStamp::toHour(std::string& time)const
+    std::string TimeStamp::toHour(std::string& time)
     {
         return time.substr(0, time.find(":"));
     }
-    std::string TimeStamp::toMinute(std::string& time)const
+    std::string TimeStamp::toMinute(std::string& time)
     {
         return time.substr(time.find(":") + 1, time.find_last_of(":") - time.find(":") - 1);
     }
-    std::string TimeStamp::toSecond(std::string& time)const
+    std::string TimeStamp::toSecond(std::string& time)
     {
         return time.substr(time.find_last_of(":") + 1);
+    }
+    std::string TimeStamp::getDate() const
+    {
+        return m_literal.substr(0, m_literal.find(" "));
     }
     std::string TimeStamp::get(TimeType type)const
     {
@@ -107,6 +111,13 @@ namespace liao::Util
     TimeStamp::TimeStamp(TimeStamp&& obj) noexcept
         :m_literal(std::move(obj.m_literal)),m_timestamp(obj.m_timestamp)
     {}
+    TimeStamp::TimeStamp(long long seconds)
+        : m_timestamp(std::chrono::time_point<std::chrono::system_clock>(
+            std::chrono::seconds(seconds)
+        ))
+    {
+        reset(m_timestamp);
+    }
     const std::string& TimeStamp::getString()
     {
         if (m_literal.empty())
