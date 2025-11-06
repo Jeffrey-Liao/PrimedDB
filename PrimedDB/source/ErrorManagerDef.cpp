@@ -21,7 +21,7 @@ namespace liao::Util
     }
     static void InfoLog(Error& error)
     {
-        Infor::Log::Get()[Infor::LogType::Info].openToFile(std::string("Info"+NOW.getDate())).split('-') << error.m_name  << error.m_message << Infor::Log::LogEndl;
+        Infor::Log::Get()[Infor::LogType::Info].split('-') << error.m_name  << error.m_message << Infor::Log::LogEndl;
     }
     Error::Error(ErrorLevel level, std::string& name, std::string& message,const Infor::ClassInfor& info)
         :m_level(level),m_name(std::move(name)),m_message(std::move(message)),m_errorTime(TimeStamp::Now()),m_info(info)
@@ -100,19 +100,19 @@ namespace liao::Util
     }
 
    
-    void ErrorManager::set(ErrorLevel level, std::string& error, std::string& errorMessage, const Infor::ClassInfor& info)
+    void ErrorManager::set(ErrorLevel level, std::string& error, std::string& m_message, const Infor::ClassInfor& info)
     {
-        Error errorObject(level, error, errorMessage, info);
+        Error errorObject(level, error, m_message, info);
         set(errorObject);
     }
-    void ErrorManager::set(ErrorLevel level, std::string_view error, std::string_view errorMessage,const Infor::ClassInfor& infor)
+    void ErrorManager::set(ErrorLevel level, std::string_view error, std::string_view m_message,const Infor::ClassInfor& infor)
     {
-        Error errorObject(level, error, errorMessage,infor);
+        Error errorObject(level, error, m_message,infor);
         set(errorObject);
     }
-    void ErrorManager::set(ErrorLevel level, std::string_view error, std::string_view errorMessage)
+    void ErrorManager::set(ErrorLevel level, std::string_view error, std::string_view m_message)
     {
-        Error errorObject(level, error, errorMessage, Infor::ClassInfor());
+        Error errorObject(level, error, m_message, Infor::ClassInfor());
         WriteLock lock(m_mutex);
         m_errors.emplace_back(errorObject);
         m_reported = true;

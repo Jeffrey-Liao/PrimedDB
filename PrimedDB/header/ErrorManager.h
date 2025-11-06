@@ -59,9 +59,9 @@ namespace liao::Util
         ErrorManager();
     public:
         void set(Error& error);
-        void set(ErrorLevel level, std::string& error,std::string& errorMessage,const Infor::ClassInfor& info);
-        void set(ErrorLevel level, std::string_view error, std::string_view errorMessage,const Infor::ClassInfor& info);
-        void set(ErrorLevel level, std::string_view error, std::string_view errorMessage);
+        void set(ErrorLevel level, std::string& error,std::string& m_message,const Infor::ClassInfor& info);
+        void set(ErrorLevel level, std::string_view error, std::string_view m_message,const Infor::ClassInfor& info);
+        void set(ErrorLevel level, std::string_view error, std::string_view m_message);
         template<class F, class... Args>
         void subscribe(ErrorLevel level, F&& func, Args&&... args)
         {

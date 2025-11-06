@@ -2,6 +2,8 @@
 #include "TimeStamp.h"
 #include "HashContainer.h"
 #include "Singleton.h"
+#include <any>
+
 //.def file for structure definition. .inf file for informations. .dat file for data.
 namespace liao
 {
@@ -25,7 +27,14 @@ namespace liao
 			System
 		};
 	}
-
+	class Global:public Singleton<Global>
+	{
+		std::unordered_map<std::string, int> m_values;
+	public:
+		void set(std::string name, int value);
+        int get(std::string name);
+		bool exist(std::string name);
+	};
 	DYNAMIC
 	concept Numeric = std::integral<T> || std::floating_point<T>;
 
@@ -46,6 +55,8 @@ namespace liao
 		static void Split(std::vector<std::string>& out, const std::string& s, char delimiter);
 		static std::shared_ptr < std::fstream > OpenDataFile(const std::string& name);
 		static unsigned ByteConvert(unsigned byte);
+		static std::string vectorToString(const std::deque<std::shared_ptr<std::string>>& vec,const std::vector<bool>&);
+		static unsigned MaxSizeForBlock(unsigned byteSize);
 		DYNAMICCON(std::integral)
 		static long long VectorSum(std::vector<T>& vec,size_t size = vec.size())
 		{
@@ -63,6 +74,7 @@ namespace liao
 		static void StringToVectorBool(std::vector<bool>& result, const std::string& data);
 		static bool ValidName(std::string& name);
 		static void SplitFast(std::vector<size_t>& delimiters, const std::string& str, char delimiter);
+		static void clearMemory(void* memory, size_t size);
 	};
 
 }

@@ -8,15 +8,23 @@ namespace liao::PrimedDB
 		Int,
 		Varchar,
 		Number,
-		Text,
-		Time,
-		Date
+		RecordNum,
+		Table,
+		Column,
+		User,
+		Session,
+		DataBase,
+		String,
+		Type,
+		Operator,
+		All,
+		Not,
 	};
 	class Column
 	{
 		unsigned int m_byteSize;
 		std::string m_columnName;
-		unsigned int m_primed;
+		unsigned int m_primed=0;
 		std::string m_owner;
 		DataType m_type;
 		mutable std::shared_mutex m_mutex;
@@ -38,6 +46,7 @@ namespace liao::PrimedDB
 		const std::string& getId() const;
 		std::string toString() const;
 		bool operator<(const Column&);
+		bool operator<(const Column&) const ;
 		void operator=(const Column&&);
         ~Column() = default;
 	};

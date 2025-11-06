@@ -17,6 +17,8 @@ namespace liao::PrimedDB
 		mutable ShareMutex m_listMutex;
 		std::fstream m_tableFile;
 		//read all table information from tables.struct
+		void constructFromDataDefFile();
+		void constructTableFromDataFile();
 		int selectFromTables(std::string, std::unordered_map<std::string, TablePtr>&);
 		TableManager();
 	public: 
@@ -27,8 +29,11 @@ namespace liao::PrimedDB
 		TablePtr get_noLock(const std::string&);
 		ShareMutex& getMutex();
 		TablePtr get(unsigned pos);
+		bool existColumn(const std::string& name)const;
 		static void transfer(User&,TablePtr,User&);
 		unsigned size()const;
+		std::string toString() const;
+		std::string format() const;
 		void clear();
 		~TableManager();
 	};

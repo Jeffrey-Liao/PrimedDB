@@ -1,3 +1,4 @@
+#include "BlockManager.h"
 #include "Setting.h"
 #include "User.h"
 #include "UserManager.h"
@@ -201,6 +202,20 @@ namespace liao::PrimedDB
 	{
 		WriteLock lock(m_mutex);
 		m_level = level;
+	}
+	void User::submit(Transection&& operation)
+	{
+		WriteLock lock(m_mutex);
+		m_pendingOperations.emplace_back(std::move(operation));
+	}
+	void User::commit()
+	{
+		WriteLock lock(m_mutex);
+		while (!m_pendingOperations.empty())
+		{
+			BlockManager::Get().operate(m_pendingOperations.front());
+			m_pendingOperations.pop_front();
+		}
 	}
 	string User::toString() const
 	{

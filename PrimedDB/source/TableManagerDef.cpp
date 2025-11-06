@@ -15,32 +15,37 @@ namespace liao::PrimedDB
 		}
         return -1;
 	}
-	TableManager::TableManager()
+	void TableManager::constructFromDataDefFile()
 	{
-		m_tableFile.open(Util::Setting::Get().getTableFile(),ios::in|ios::out|ios::app);
-		string buffer;
+		m_tableFile.open(Util::Setting::Get().getTableFile(), ios::in | ios::out | ios::app);
 		vector<string> labels;
 		labels.reserve(10);
 		if (!m_tableFile.fail())
 		{
+			string buffer;
 			while (!m_tableFile.eof())
 			{
 				getline(m_tableFile, buffer);
 				if (!buffer.empty())
 				{
 					m_tables.push_back(std::make_shared<Table>(buffer, labels));
-					m_nameIndex[m_tables.back()->getName()]= m_tables.back();
+					m_tables.back()->read();
+					m_nameIndex[m_tables.back()->getName()] = m_tables.back();
 				}
 
 			}
 			m_tableFile.clear();
 		}
 	}
+	TableManager::TableManager()
+	{
+		constructFromDataDefFile();
+	}
 
 	TablePtr TableManager::add(User& operater, std::string& name, set<Column>& columns, UserLevel level)
 	{
 		if (m_nameIndex.contains(name))
-			return nullptr;
+			return m_nameIndex[name];
 		UserLevel userLevel = operater.getLevel();
 		if (level != UserLevel::None && level < userLevel)
 			userLevel = level;
@@ -55,6 +60,15 @@ namespace liao::PrimedDB
 	{
 		ReadLock lock(m_listMutex);
 		return m_nameIndex.contains(name);
+	}
+	bool TableManager::existColumn(const std::string& name)const
+	{
+		for (auto& p : m_tables)
+		{
+			if (p->existColumn(name))
+				return true;
+		}
+		return false;
 	}
 	bool TableManager::drop(User& operater, const std::string& name)
 	{
@@ -122,6 +136,24 @@ namespace liao::PrimedDB
 	{
 		m_nameIndex.clear();
 		m_tables.clear();
+	}
+	std::string TableManager::toString() const
+	{
+		string str;
+		for (int n = 0 ;n<m_tables.size();++n)
+		{
+			str+= m_tables[n]->toString() + "\n";
+		}
+		return str;
+	}
+	std::string TableManager::format() const
+	{
+		string str;
+		for (auto& table:m_tables)
+		{
+			str+= table->format() + "\n";
+		}
+		return str;
 	}
 	TableManager::~TableManager()
 	{

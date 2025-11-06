@@ -76,5 +76,45 @@ namespace liao {
 				delimiters.push_back(i);
 		}
 	}
+	void StaticFunc::clearMemory(void* memory, size_t size)
+	{
+		memset(memory, 0, size);
+	}
+	std::string StaticFunc::vectorToString(const std::deque<shared_ptr<string>>& vec, const std::vector<bool>& mask)
+	{
+		string result;
+		for (int n = 0;n<vec.size();++n)
+		{
+			if (!mask[n])
+			{
+				if (vec[n]->empty())
+					result += "null:";
+				else
+					result += *vec[n] + ":";
+			}
 
+		}
+		if (!result.empty())
+			result.pop_back();
+		return result;
+	}
+	unsigned StaticFunc::MaxSizeForBlock(unsigned byteSize)
+	{
+		return Util::Setting::Get().getBlockSize() / byteSize;
+	}
+	void Global::set(std::string name, int value)
+	{
+		m_values[name] = value;
+	}
+	int Global::get(std::string name)
+	{
+		if (m_values.contains(name))
+            return m_values[name];
+		else
+			return -1;
+	}
+	bool Global::exist(std::string name)
+	{
+		return m_values.contains(name);
+	}
 }

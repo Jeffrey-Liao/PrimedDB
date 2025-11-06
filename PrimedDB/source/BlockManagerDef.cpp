@@ -8,9 +8,9 @@ namespace liao::PrimedDB
 		m_blocks.resize(Util::Setting::Get().getBlockNumber());
 		m_active.resize(m_blocks.size());
 		m_terminate = std::async(std::launch::async, &BlockManager::manager,this);
-		for (int n = 0;n<m_blocks.size();++n)
+		for (unsigned int n = 0;n<m_blocks.size();++n)
 		{
-			m_active[n];
+			m_active[n] = n;
 		}
 	}
 	void BlockManager::manager()
@@ -45,11 +45,26 @@ namespace liao::PrimedDB
 		{
 			WriteLock lock(m_mutex);
 			pos = m_active.front();
-			while (!m_blocks[pos].getMutex().try_lock());
+			m_blocks[pos].getOwner()->dropBlock(pos);
 			m_active.pop_front();
 			m_active.push_back(pos);
 		}
 		return pos;
+	}
+	unsigned BlockManager::allocate(TablePtr table, int pos)
+	{
+		auto newBlock = allocate();
+		if (pos == -1)
+		{
+			table->addBlock(newBlock);
+			m_blocks[newBlock].assign(table, table->size());
+		}
+		else
+		{
+			table->getOwned()[pos] = newBlock;
+			m_blocks[newBlock].assign(table, pos);
+		}
+		return newBlock;
 	}
 	void BlockManager::handle(Transection& transection)
 	{
@@ -60,7 +75,7 @@ namespace liao::PrimedDB
 			unsigned position = transection.getBlockId();
 			auto table = TableManager::Get().get_noLock(transection.getTable());
 			unsigned location = transection.getLocation();
-			if (transection.getType() == TransectionType::Insert)
+			if (transection.getType() == SQLType::Insert)
 			{
 				std::pair<unsigned, std::shared_ptr<char[]>> result = std::make_pair(transection.size(), memory);
 				do
@@ -71,7 +86,7 @@ namespace liao::PrimedDB
 						transection.setBlockId(position);
 						{
 							m_blocks[position].getMutex().unlock();
-							m_blocks[position].assign(table, table->getOwned().size()*totalRecord(table->totalByte()));
+							m_blocks[position].assign(table, table->size());
 						}
 						table->addBlock(position);
 					}
@@ -81,7 +96,7 @@ namespace liao::PrimedDB
 				while (result.first > 0);
 				table->incrementSize();
 			}
-			else if (transection.getType() == TransectionType::Update)
+			else if (transection.getType() == SQLType::Update)
 			{
 				if (position == -1)
 				{
@@ -90,7 +105,7 @@ namespace liao::PrimedDB
 				}
 				m_blocks[position].update(location, memory);
 			}
-			else if (transection.getType() == TransectionType::Delete)
+			else if (transection.getType() == SQLType::Update)
 			{
 				if (position == -1)
 				{
@@ -98,6 +113,7 @@ namespace liao::PrimedDB
 					return;
 				}
 				m_blocks[position].remove(location);
+				table->decrementSize(location);
 				if (m_blocks[position].percentage() < 0.5)
 				{
 					rearrange(table->getOwned(), table->getAvailable());
@@ -109,7 +125,7 @@ namespace liao::PrimedDB
 	}
 	unsigned BlockManager::totalRecord(unsigned bytes)
 	{
-		return Util::Setting::Get().getBlockNumber() / bytes;
+		return Util::Setting::Get().getBlockSize() / bytes;
 	}
 	void BlockManager::operate(Transection& transection)
 	{
@@ -150,6 +166,7 @@ namespace liao::PrimedDB
 	{
 		if (m_active.empty())
 		{
+			WriteLock lock(m_mutex);
 			m_active.erase(std::find(m_active.begin(), m_active.end(), pos));
 			m_active.push_back(pos);
 			m_blocks[pos].drop(pos);
@@ -157,7 +174,14 @@ namespace liao::PrimedDB
 	}
 	Block& BlockManager::get_noLock(unsigned pos)
 	{
+        WriteLock lock(m_mutex);
+		m_active.erase(std::find(m_active.begin(), m_active.end(), pos));
+		m_active.push_back(pos);
 		return m_blocks[pos];
+	}
+	ShareMutex& BlockManager::getMutex()
+	{
+		return m_mutex;
 	}
 	BlockManager::~BlockManager()
 	{

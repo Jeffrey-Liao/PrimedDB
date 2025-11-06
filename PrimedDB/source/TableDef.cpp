@@ -6,7 +6,7 @@ USESTD;
 namespace liao::PrimedDB
 {
 	Table::Table(Table&& move) noexcept
-		:m_name(std::move(move.m_name)),m_available(std::move(move.m_available)),m_permission(move.m_permission), m_size(move.m_size), m_ownerId(std::move(move.m_ownerId)), m_columns(std::move(move.m_columns)),m_byteSize(move.m_byteSize),m_primedSize(move.m_primedSize), m_pendingOperations(std::move(move.m_pendingOperations)),m_recordByte(move.m_recordByte)
+		:m_name(std::move(move.m_name)),m_available(std::move(move.m_available)),m_permission(move.m_permission), m_size(move.m_size), m_ownerId(std::move(move.m_ownerId)), m_columns(std::move(move.m_columns)),m_byteSize(move.m_byteSize),m_primedSize(move.m_primedSize),m_recordByte(move.m_recordByte)
 	{}
 	Table::Table(const std::string& fileLine)
 	{
@@ -55,7 +55,78 @@ namespace liao::PrimedDB
 		int recordPerBlock = Util::Setting::Get().getBlockSize()/byte();
         return std::make_pair(position / recordPerBlock, position % recordPerBlock);
 	}
-
+	void Table::intoString(int& index,deque<shared_ptr<string>>& results, vector<char*>& block,bool raw)
+	{
+		Math::GmpBigNumber number;
+		char* line;
+		for (int n = 0,sum = 0;n<block.size();++n)
+		{
+			line = block[n];
+			if (!m_available[index])
+				continue;
+			sum = 0;
+			auto ptr = UCharPtr(line);
+			deprimize(ptr, byte(), totalByte(), m_recordByte);
+			for (auto& column:m_columns)
+			{
+				//Read primized data
+				if (raw)
+				{
+					mpz_import(number.get_mpz_t(),
+						column.primed(),              
+						Math::isBigEndian() ? 1 : -1, 
+						sizeof(char),             
+						0,                        
+						0,                        
+						line+sum);
+					results.emplace_back( make_shared<string>(std::move(number.get_str())));
+					sum += column.primed();
+				}
+				//Read deprimized data
+				else
+				{
+					string result;
+					auto type = column.getType();
+					if (type == DataType::Int)
+					{
+						Math::GmpBigNumber number;
+						mpz_import(number.get_mpz_t(),
+							column.size(),              // 字节数
+							Math::isBigEndian() ? 1 : -1, // 字节序
+							sizeof(char),             // 每个单位的大小
+							0,                        // 无特定顺序
+							0,                        // 无填充位
+							ptr.get() + sum);
+						result = number.get_str();
+					}
+					else if (type == DataType::Number)
+					{
+						double number;
+						memcpy_s(&number, sizeof(double), ptr.get() + sum, column.size());
+						result = std::to_string(number);
+					}
+					else if (type == DataType::Varchar)
+					{
+						result = std::string(ptr.get() + sum, column.size());
+					}
+					results.emplace_back(make_shared<string>(result));
+                    sum += column.size();
+				}
+				
+			}
+			//get record number
+			mpz_import(number.get_mpz_t(),
+				recordByte(),              // 字节数
+				Math::isBigEndian() ? 1 : -1, // 字节序
+				sizeof(char),             // 每个单位的大小
+				0,                        // 无特定顺序
+				0,                        // 无填充位
+				line + totalByte() - recordByte());
+			results.emplace_back(make_shared<string>(std::move(number.get_str())));
+			index++;
+		}
+		
+	}
 	void Table:: primize(UCharPtr& memory,unsigned byteSize,unsigned primedSize,unsigned recordSize)
 	{
 		char* origin = memory.release();
@@ -98,6 +169,7 @@ namespace liao::PrimedDB
 	{
 		char* origin = memory.release();
 		char* ptr = new char[byteSize];
+		memory.reset(ptr);
 		memset(ptr, 0, byteSize);
 		Math::GmpBigNumber convert;
 		unsigned m = 0;
@@ -105,15 +177,15 @@ namespace liao::PrimedDB
 		{
 			mpz_import(convert.get_mpz_t(), 8, Math::isBigEndian() ? 1 : -1, 1, 0, 0, origin+n);
 			convert /= Util::Setting::Get().getEnlargeSize();
-			mpz_export(ptr + m, nullptr, Math::isBigEndian()? 1:-1, 1, 0, 0, convert.get_mpz_t());
+			if (convert != 0)
+				mpz_export(ptr + m, nullptr, Math::isBigEndian() ? 1 : -1, 1, 0, 0, convert.get_mpz_t());
 			unsigned size = byteSize - m;
 			if (size > 4)
 				m += 4;
 			else
-				m += size-1;
+				break;
 		}
-		memory.reset(ptr);
-		delete[] origin;
+
 	}
 
 	bool Table::isEmpty()const
@@ -121,6 +193,7 @@ namespace liao::PrimedDB
 		ReadLock lock(m_mutex);
 		return m_size == 0;
 	}
+
 	const std::string& Table::getName() const
 	{
 		ReadLock lock(m_mutex);
@@ -171,6 +244,10 @@ namespace liao::PrimedDB
 		ReadLock lock(m_mutex);
 		return m_permission;
 	}
+	Column& Table::getColumn(const std::string& name)
+	{
+		return *findColumn(name);
+	}
 	void Table::setUnavailable(unsigned pos)
 	{
 		WriteLock lock(m_mutex);
@@ -188,6 +265,13 @@ namespace liao::PrimedDB
 		m_available.emplace_back(true);
 		return m_size;
 	}
+	unsigned Table::decrementSize(unsigned pos)
+	{
+		WriteLock lock(m_mutex);
+		m_size--;
+		m_available[pos] = false;
+		return m_size;
+	}
 	void Table::clear()
 	{
 		WriteLock lock(m_mutex);
@@ -197,6 +281,24 @@ namespace liao::PrimedDB
 		}
 		m_owned.clear();
 		m_columns.clear();
+	}
+	bool Table::read()
+	{
+		fstream tableFile(m_name + ".dat", ios::in | ios::binary);
+		if (tableFile.is_open()||tableFile.fail())
+		{
+			return false;
+		}
+		int lineNumber = 0;
+		while (!tableFile.eof())
+		{
+			m_owned.emplace_back(BlockManager::Get().allocate(shared_from_this(), lineNumber*StaticFunc::MaxSizeForBlock(totalByte())));
+			Block& block = BlockManager::Get().get_noLock(m_owned.back());
+			tableFile.read(block.reference(), Util::Setting::Get().getBlockSize());
+			block.build();
+			lineNumber++;
+		}
+		tableFile.close();
 	}
 	unsigned Table::byte()const
 	{
@@ -245,6 +347,10 @@ namespace liao::PrimedDB
 			return false;
 		}
 	}
+	unsigned Table::columnSize() const
+	{
+		return m_columns.size();
+	}
 	unsigned Table::byteSize()const
 	{
 		ReadLock lock(m_mutex);
@@ -254,6 +360,11 @@ namespace liao::PrimedDB
 	{
 		ReadLock lock(m_mutex);
 		return m_primedSize+m_recordByte;
+	}
+	unsigned Table::recordByte()const
+	{
+		ReadLock lock(m_mutex);
+		return m_recordByte;
 	}
 	size_t Table::size() const
 	{
@@ -289,39 +400,31 @@ namespace liao::PrimedDB
 		}
         return oss.str();
 	}
-	void Table::insert(const std::string& userId, UCharPtr memory, unsigned size)
+	void Table::insert(const std::string& userName, UCharPtr memory, unsigned size)
 	{
 		auto blockPos = convertBlockPos(m_size);
 		WriteLock lock(m_mutex);
 		int blockIndex = m_owned.empty() || blockPos.first >= m_owned.size() ? -1 : m_owned[blockPos.first];
 		primize(memory,m_byteSize,m_primedSize,m_recordByte);
-		m_pendingOperations.emplace(Transection(userId, m_name, TransectionType::Insert, blockIndex, blockPos.second, size, std::move(memory)));
-	}
-	void Table::update(const std::string& userId, unsigned position, UCharPtr memory, unsigned size)
-	{
-		auto blockPos = convertBlockPos(position);
-		WriteLock lock(m_mutex);
-		m_pendingOperations.emplace(Transection(userId, m_name, TransectionType::Update, blockPos.first, blockPos.second, size, std::move(memory)));
-	}
-	void Table::remove(const std::string& userId, unsigned position)
-	{
-		auto blockPos = convertBlockPos(position);
-		WriteLock lock(m_mutex);
-		m_pendingOperations.emplace(Transection(userId, m_name, TransectionType::Delete, blockPos.first, blockPos.second));
-	}
-
-	void Table::commit()
-	{
-		WriteLock lock(m_mutex);
-		while (!m_pendingOperations.empty())
+		auto user = UserManager::Get().get(userName);
+		if (user != nullptr)
 		{
-			BlockManager::Get().operate(m_pendingOperations.front());
-			if (m_pendingOperations.front().getType() == TransectionType::Insert)
-				++m_size;
-			else if (m_pendingOperations.front().getType() == TransectionType::Delete)
-				--m_size;
-			m_pendingOperations.pop();
+			user->submit(Transection(userName, m_name, SQLType::Insert, blockIndex, blockPos.second, size, std::move(memory)));
 		}
+	}
+	void Table::update(const std::string& userName, unsigned position, UCharPtr memory, unsigned size)
+	{
+		auto blockPos = convertBlockPos(position);
+		WriteLock lock(m_mutex);
+		auto user = UserManager::Get().get(userName);
+		user->submit(Transection(userName, m_name, SQLType::Update, blockPos.first, blockPos.second, size, std::move(memory)));
+	}
+	void Table::remove(const std::string& userName, unsigned position)
+	{
+		auto blockPos = convertBlockPos(position);
+		WriteLock lock(m_mutex);
+		auto user = UserManager::Get().get(userName);
+		user->submit(Transection(userName, m_name, SQLType::Delete, blockPos.first, blockPos.second));
 	}
 	void Table::rollback(const string& name)
 	{
@@ -358,7 +461,12 @@ namespace liao::PrimedDB
 			WriteLock lock(m_mutex);
 			m_owned.emplace_back(pos);
 		}
-		BlockManager::Get().get_noLock(pos).read();
+		int index = m_owned .size()-1;
+		auto lineNumber = index * StaticFunc::MaxSizeForBlock(totalByte());
+		fstream tableFile(m_name + ".dat", ios::in | ios::app | ios::binary);
+		tableFile.seekg(lineNumber);
+        tableFile.write(BlockManager::Get().get_noLock(pos).reference(), Util::Setting::Get().getBlockSize());
+		tableFile.close();
 	}
 	void Table::dropBlock(unsigned pos)
 	{
@@ -370,37 +478,87 @@ namespace liao::PrimedDB
 		WriteLock lock(m_mutex);
 		m_owned[pos] = -1;
 	}
+	std::vector<unsigned> Table::where(std::unordered_map<std::string, std::string>& column_value)
+	{
+		ReadLock lock(m_mutex);
+		Math::GmpBigNumber tempRecordNum = 1,cmp;
+		std::vector<unsigned> result;
+		for (auto& column:m_columns)
+		{
+			if (column.getType() == DataType::Int)
+				tempRecordNum *= Math::PrimeNumberConvert::generate(stoi(column_value[column.getName()]),Util::Setting::Get().getEnlargePower());
+			else if (column.getType() == DataType::Varchar)
+				tempRecordNum *= Math::PrimeNumberConvert::generateFromString(column_value[column.getName()]);
+		}
+		for (unsigned n = 0, m = 0;n<m_owned.size()&&m<m_size;++n)
+		{
+			if (m_owned[n] == -1)
+				BlockManager::Get().allocate(shared_from_this(),n * StaticFunc::MaxSizeForBlock(totalByte()));
+			vector<char*>& records = BlockManager::Get().get_noLock(n).getRecords();
+			for (auto& record:records)
+			{
+				if (!m_available[m])
+					continue;
+				char* recordNum = record + m_primedSize;
+				mpz_import(cmp.get_mpz_t(),
+					m_recordByte,        // 字节数
+					1,                 // 大端序（1 = most significant word first）
+					sizeof(unsigned char), // 每个“单位”的大小（1 字节）
+					0,                 // 无符号（0 = least significant byte first within word，但这里单位是1字节，所以无影响）
+					0,                 // 无填充位
+					recordNum);
+				if (cmp % tempRecordNum == 0)
+				{
+					result.push_back(m);
+				}
+				++m;
+			}
+		}
+		return result;
+	}
+	std::vector<Column>& Table::getColumns()
+	{
+		ReadLock lock(m_mutex);
+		return m_columns;
+	}
+	std::string Table::format()
+	{
+		ReadLock lock(m_mutex);
+		std::ostringstream oss;
+		oss << m_name;
+		for (unsigned n=0;n<m_columns.size();++n)
+		{
+			oss<<"|"<<m_columns[n].getName()<<":"<<static_cast<unsigned int>(m_columns[n].getType());
+		}
+		return oss.str();
+	}
 	void Table::setOwner(const std::string& ownerid)
 	{
 		WriteLock lock(m_mutex);
 		m_ownerId = ownerid;
 	}
-	Record Table::select(const std::string& column, bool raw)
+	Record Table::select(bool raw)
 	{
-		vector<char*> reference;
-		vector<ReadLock> locks;
-
-		if (column == "all")
+		ReadLock lock(m_mutex);
+		deque<deque<shared_ptr<string>>> references;
+		unordered_map<string, int> header;
+		auto& blockManager = BlockManager::Get();
+		int byteSize = 0;
+		for (int n =0;n<m_columns.size();++n)
 		{
-			for (size_t i = 0;i<m_owned.size(); ++i)
-			{
-				if (m_owned[i] == -1)
-				{
-					m_owned[i] = BlockManager::Get().allocate();
-				}
-				auto& block = BlockManager::Get().get_noLock(i);
-				locks.emplace_back(ReadLock(block.getMutex()));
-				for (unsigned i = 0;i< block.size();++i)
-				{
-                    reference.push_back(block.get_noLock(i));
-				}
-			}
-
+			header[m_columns[n].getName()] = n;
 		}
-	}
-	Record Table::select(vector<string>&, bool raw)
-	{
-
+		header["recordNum"] = header.size() - 1;
+		int index = 0;
+		for (auto& o :m_owned)
+		{
+			auto& block = blockManager.get_noLock(o);
+			{
+				references.emplace_back();
+				intoString(index,references.back(), block.getRecords(), raw);
+			}
+		}
+		return Record(header, references);
 	}
 	void Table::setSize(unsigned newSize)
 	{
@@ -428,7 +586,6 @@ namespace liao::PrimedDB
         m_primedSize = object.m_primedSize;
         m_recordByte = object.m_recordByte;
         m_columns = std::move(object.m_columns);
-        m_pendingOperations = std::move(object.m_pendingOperations);
 		return *this;
 	}
 	Table::~Table()

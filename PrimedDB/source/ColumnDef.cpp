@@ -25,13 +25,15 @@ namespace liao::PrimedDB {
         vector<string> vec;
         int n = 0;
         StaticFunc::Split(vec, line ,'|');
-        if (vec.size() != 3)
+        if (vec.size() != 4)
         {
             Util::ErrorManager::Get().set(Util::ErrorLevel::Fatal,"StructureFileBroken","The structure file is broken at position of table "+m_owner,Infor::ClassInfor(THISFUNC,THISFILE,THISLINE));
+            return;
         }
         m_columnName = vec[n++];
         m_type = static_cast<DataType>(stoi(vec[n++]));
         m_byteSize = stoi(vec[n]);
+        m_primed = stoi(vec[n]);
     }
     void Column::setType(DataType type)
     {
@@ -78,10 +80,14 @@ namespace liao::PrimedDB {
     {
         std::ostringstream oss;
         ReadLock lock(m_mutex);
-        oss << format("{}|{}|{}",m_columnName,static_cast<int>(m_type),m_byteSize);
+        oss << format("{}|{}|{}|{}",m_columnName,static_cast<int>(m_type),m_byteSize,m_primed);
         return oss.str();
     }
     bool Column::operator<(const Column& object)
+    {
+        return m_columnName < object.m_columnName;
+    }
+    bool Column::operator<(const Column& object)const
     {
         return m_columnName < object.m_columnName;
     }
@@ -89,6 +95,7 @@ namespace liao::PrimedDB {
     {
         m_columnName = std::move(object.m_columnName);
         m_byteSize = object.m_byteSize;
+        m_primed = object.m_primed;
         m_owner = std::move(object.m_owner);
         m_type= object.m_type;
     }

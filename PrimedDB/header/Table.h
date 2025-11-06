@@ -1,5 +1,7 @@
 #pragma once
 #include <set>
+#include <asio/detail/type_traits.hpp>
+
 #include "Record.h"
 #include "Transection.h"
 #include "Column.h"
@@ -7,7 +9,8 @@
 
 namespace liao::PrimedDB
 {
-	class Table
+
+	class Table : std::enable_shared_from_this<Table>
 	{
 		std::string m_name;
 		std::vector<bool> m_available;
@@ -23,11 +26,10 @@ namespace liao::PrimedDB
 		unsigned m_primedSize;
 		//the byte size of record number after all data
 		unsigned m_recordByte;
-		std::queue<Transection> m_pendingOperations;
 
 		void construct(std::vector<std::string>&, const std::string& fileLine);
 		std::pair<int, int> convertBlockPos(unsigned position);
-
+		void intoString(int& index,std::deque<std::shared_ptr<std::string>>&, std::vector<char*>&,bool);
 
 	public:
 		Table(const Table&) = delete;
@@ -55,19 +57,24 @@ namespace liao::PrimedDB
 		std::deque<int>&  getOwned();
 		//return permission of the table
 		UserLevel getPermission() const;
+		Column& getColumn(const std::string& name);
 		//remove a record at given position
 		void setUnavailable(unsigned pos);
 		//recover a record at given position
 		void setAvailable(unsigned pos);
 		void clear();
+		bool read();
 		unsigned incrementSize();
+		unsigned decrementSize(unsigned pos);
 		unsigned byte()const;
 		unsigned primedByte()const;
 		bool addColumn(std::string& name, unsigned byteSize,DataType);
 		void dropColumn(const std::string& name);
         bool rename(std::string& name);
+		unsigned columnSize() const;
 		unsigned byteSize()const;
 		unsigned totalByte()const;
+		unsigned recordByte()const;
 		size_t size() const;
 		const std::string& getOwnerId() const;
 		std::string toString();
@@ -75,16 +82,16 @@ namespace liao::PrimedDB
 		void insert(const std::string&,UCharPtr memory, unsigned size = 1);
 		void update(const std::string&, unsigned position, UCharPtr memory, unsigned size = 1);
 		void remove(const std::string&, unsigned position);
-		void commit();
 		void rollback(const std::string& name);
 		void addBlock(unsigned pos);
 		void dropBlock(unsigned pos);
 		void dropBlockAt(unsigned pos);
-		
+		std::vector<unsigned> where(std::unordered_map<std::string,std::string>&);
+		std::vector<Column>& getColumns();
+		std::string format();
 		void setSize(unsigned newSize);
 		void setOwner(const std::string& );
-		Record select(const std::string& column = "all",bool raw = false);
-		Record select(std::vector<std::string>&, bool raw = false);
+		Record select(bool raw = false);
 		ShareMutex& getMutex();
 		unsigned blockSize()const;
 		~Table();

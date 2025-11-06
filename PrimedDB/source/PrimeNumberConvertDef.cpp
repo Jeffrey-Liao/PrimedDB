@@ -57,4 +57,39 @@ namespace liao::Math
         return (result == 2);
 	}
 
+    GmpBigNumber PrimeNumberConvert::generateFromString(const std::string& str)
+	{
+        const char* origin = str.c_str();
+        int byteSize = str.size();
+        Math::GmpBigNumber convert, recordNumber = 1;
+        unsigned m = 0;
+        for (unsigned n = 0; n < byteSize; m += 8)
+        {
+            unsigned size = byteSize - n;
+            if (size < 4)
+            {
+                if (size == 1)
+                    convert = static_cast<unsigned char>(*(origin + n));
+                else if (size == 2)
+                    convert = static_cast<unsigned short>(*((unsigned short*)origin + n));
+                else
+                {
+                    convert = (static_cast<uint32_t>(*(origin + n)) << 16) |
+                        (static_cast<uint32_t>(*(origin + n + 1)) << 8) |
+                        (static_cast<uint32_t>(*(origin + n + 2)) << 0);
+                }
+            }
+            else
+                convert = static_cast<unsigned int>(
+                    *((unsigned int*)(origin + n)));
+            Math::PrimeNumberConvert::generate_big(convert, 9);
+            recordNumber *= convert;
+        }
+        return recordNumber;
+	}
+    GmpBigNumber PrimeNumberConvert::generateFromDouble(double value)
+	{
+        GmpBigNumber convert;
+        return convert;
+	}
 }

@@ -26,12 +26,9 @@ namespace liao::Net
         std::atomic<bool> m_stop;
         bool m_working;
         asio::io_context& m_io;
-        std::condition_variable m_timerCv;
-        std::atomic<bool> m_interrupt;
         std::shared_ptr<asio::steady_timer> m_timer;
         std::mutex m_mutex;
 
-        std::future<bool> sleep(SocketPtr,std::chrono::seconds);
         void doAccept();
         void doRead(SocketPtr socket);
         void handle_read(SocketPtr socket,
@@ -41,9 +38,6 @@ namespace liao::Net
         void stream2string(std::shared_ptr<asio::streambuf> buffer, std::string& message);
         void exitAct(SocketPtr);
         void authenticate(const std::string& id);
-        void authRead(SocketPtr socket,
-            std::shared_ptr<asio::streambuf> buffer,
-            const std::error_code& error);
 
     public:
         Server(asio::io_context& io,const std::string& ip, unsigned short port);

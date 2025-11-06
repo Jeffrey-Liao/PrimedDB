@@ -6,7 +6,12 @@ USESTD;
 USELIAOPRIMED;
 namespace liao::Net
 {
-    const string SUCCESS = "success";
+    const string SUCCESS = "success\n";
+    const char TERMINAL = '\n';
+    const string TERMINATE = "terminate\n";
+    const string FINISH = "finish\n";
+    //for long text
+    //there will be additional line contains 'finish'
     static void CallError(const string& error, const string& message, Infor::ClassInfor infor)
     {
         Util::ErrorManager::Get().set(
@@ -41,25 +46,9 @@ namespace liao::Net
     }
     void Server::exitAct(SocketPtr socket)
     {
-        asio::write(*socket, asio::buffer("terminate\n"));
+        asio::write(*socket, asio::buffer(TERMINATE));
         string message = "use exit or quit command terminated the connection";
-
         CallInfo("ClientDisconnect", message);
-    }
-    void Server::authRead(std::shared_ptr<asio::ip::tcp::socket> socket,
-        std::shared_ptr<asio::streambuf> buffer,
-        const std::error_code& error)
-    {
-        string message;
-        if (!m_interrupt)
-        {
-            std::istream is(buffer.get());
-            std::getline(is, message);
-            if (!message.empty() && message.back() == '\r')
-                message.pop_back();
-            m_interrupt = true;
-            m_timerCv.notify_one();
-        }
     }
     void Server::authenticate(const string& id)
     {
@@ -70,9 +59,9 @@ namespace liao::Net
         m_timer = make_shared<asio::steady_timer>(m_io, timeout);
         CallInfo("AuthenticationStart", format("Checking authentication information of connection {} ", id));
         //future<bool> timer = sleep(socket,timeout);
-        asio::async_read_until(*socket, *buffer, '\n', [this, buffer, socket,id](const std::error_code& error, size_t bytes_transferred)
+        asio::async_read_until(*socket, *buffer, TERMINAL, [this, buffer, socket,id](const std::error_code& error, size_t bytes_transferred)
             {
-                std::string errorMessage;
+                std::string m_message;
                 if (!error)
                 {
                     m_timer->cancel();
@@ -87,12 +76,11 @@ namespace liao::Net
                                 password = message.substr(pos + 1);
                             if (UserManager::Get().login(name, password))
                             {
-                                errorMessage = "Login Success";
+                                m_message = "Login Success";
                                 if (socket->is_open())
                                 {
-                                    CallInfo(name, errorMessage);
-                                    asio::write(*socket, asio::buffer("success\n"));
-                                    asio::write(*socket, asio::buffer("Welcome to use Primed DB :)!\n"));
+                                    CallInfo(name, m_message);
+                                    asio::write(*socket, asio::buffer(SUCCESS));
                                     auto ptr = PrimedDB::UserManager::Get().get(name);
                                     this->m_user_clients[ptr] = socket;
                                     m_unauthorized.erase(id);
@@ -101,26 +89,26 @@ namespace liao::Net
                                 }
                             }
                             else
-                                errorMessage = "User name or password incorrect.";
+                                m_message = "User name or password incorrect.";
                         }
                         else
-                            errorMessage = "The format of authentication information incorrect.";
+                            m_message = "The format of authentication information incorrect.";
                     }
                     else
                     {
-                        errorMessage = "Nothing received";
+                        m_message = "Nothing received";
                     }
                 }
                 if (socket->is_open())
-                    asio::write(*socket, asio::buffer(errorMessage + "\n"));
-                CallInfo("LoginFailed", errorMessage);
+                    asio::write(*socket, asio::buffer(m_message + "\n"));
+                CallInfo("LoginFailed", m_message);
                 socket->close();
             });
         m_timer->async_wait([socket,this,id](const std::error_code& error)
             {
                 if (!error)
                 {
-                    asio::write(*socket, asio::buffer("Login failed\n"));
+                    asio::write(*socket, asio::buffer("Login Timeout\n"));
                     CallWarning("TimeOutWarning", "Sever wait for 5 seconds but receive nothing of authentication data");
                     socket->cancel();
                     m_unauthorized.erase(id);
@@ -160,8 +148,8 @@ namespace liao::Net
     {
         if (!m_stop) {
 
-
-            broadcast("terminate");
+            broadcast("Server shutdown.");
+            broadcast(TERMINATE);
             m_stop = true;
             for (auto& client : m_user_clients) {
                 if (client.second->is_open()) {
@@ -235,32 +223,12 @@ namespace liao::Net
                 doAccept();
             });
     }
-    future<bool> Server::sleep(SocketPtr socket, chrono::seconds sec)
-    {
-        m_interrupt = false;
-        return async(std::launch::async, [&]()
-            {
-                unique_lock<mutex> lock(m_mutex);
-                bool was_interrupted = m_timerCv.wait_for(lock, sec, [this]()
-                    {
-                        return m_interrupt.load();
-                    });
-                if (!was_interrupted) 
-                {
-                    // 情况2：超时到达
-                    asio::error_code ec;
-                    m_interrupt = true;
-                    socket->cancel(ec);  // 超时自动取消socket
- 
-                }
-                return true;
-            });
-    }
+   
     void Server::doRead(std::shared_ptr<asio::ip::tcp::socket> socket)
     {
         auto buffer = std::make_shared<asio::streambuf>();
 
-        asio::async_read_until(*socket, *buffer, '\n',
+        asio::async_read_until(*socket, *buffer, TERMINAL,
             [this, socket, buffer](const std::error_code& error, size_t bytes_transferred)
             {
                 handle_read(socket, buffer, error);
@@ -275,18 +243,48 @@ namespace liao::Net
             string message;
             stream2string(buffer, message);
 
-            if(message[0] != '/')
-            //send to compiler
-                Compiler::Compiler::Get().compile(getUser(socket),message);
+            if (message[0] != '/')
+            {
+                auto result = Compiler::Compiler::Get().compile(getUser(socket), std::move(message));
+                message.clear();
+                auto text = result.get();
+                text.m_message += FINISH;
+                asio::async_write(*socket, asio::buffer(text.m_message), [text](const std::error_code& error, size_t /*bytes_transferred*/)
+                    {
+                        if (error)
+                        {
+                            CallError("ReturnError", "An error happened when transmit the SQL result back to client", Infor::ClassInfor(THISFUNC, THISFILE));
+                        }
+                        else
+                            CallInfo("ReturnSuccess", text.m_message);
+                    });
+            }
             else
             {
                 if (message == "/quit" || message == "/exit")
                 {
                     exitAct(socket);
+                    return;
                 }
-                else
-                    doRead(socket);
+                if (message == "/structure")
+                {
+                    string structure = std::move(TableManager::Get().format());
+                    structure = to_string(structure.size())+"\n"+ structure;
+                    shared_ptr<string> structurePtr = make_shared<string>(std::move(structure));
+                    asio::async_write(*socket, asio::buffer(*structurePtr), [structurePtr](const std::error_code& error, size_t /*bytes_transferred*/)
+                        {
+                            if (error)
+                            {
+                                CallError("ReturnError", "An Error happened when trying to get the table structures", Infor::ClassInfor(THISFUNC, THISFILE));
+                            }
+                            else
+                            {
+                                CallInfo("ReturnSuccess",format("\n[\n{}]", *structurePtr));
+                            }
+                        });
+                }
             }
+            doRead(socket);
         }
         else {
             remove(socket);
@@ -297,7 +295,7 @@ namespace liao::Net
     {
         if (m_stop) return;
 
-        std::string formatted_message = message + "\n";
+        std::string formatted_message = message;
         for (auto& client : m_user_clients)
         {
             if (client.second->is_open())
@@ -382,16 +380,16 @@ namespace liao::Net
             }
             else
             {
-                CallError("StopError", "Cannot terminate client because it is not connected to the server", Infor::ClassInfor(THISFUNC, THISFILE));
                 message = "Cannot terminate client because it is not connected to the server";
+                CallError("StopError", message, Infor::ClassInfor(THISFUNC, THISFILE));
             }
-
         }
         else
         {
-            CallError("StopError", "You don't have permission to stop this client.", Infor::ClassInfor(THISFUNC, THISFILE));
             message = "You don't have permission to stop this client.";
+            CallError("StopError", message, Infor::ClassInfor(THISFUNC, THISFILE));
         }
+        
         if (m_user_clients.contains(executor) && m_user_clients[executor]->is_open())
         {
             asio::write(*m_user_clients[executor], asio::buffer(message+"\n"));

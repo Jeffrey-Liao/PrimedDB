@@ -28,19 +28,21 @@ namespace liao::PrimedDB
 		allocate();
 	}
 	Block::Block(Block&& move) noexcept
-		:m_memory(move.m_memory),m_size(move.m_size),m_id(std::move(move.m_id)),m_owner(std::move(move.m_owner))
+		:m_memory(move.m_memory),m_size(move.m_size),m_id(std::move(move.m_id)),m_owner(std::move(move.m_owner)),m_records(std::move(move.m_records))
 	{
 		move.m_memory = nullptr;
 		move.m_id = StaticFunc::GetUniqueId(Setting::Get().getUserIDHashType());
 	}
 	void Block::assign(TablePtr owner, unsigned pos)
 	{
+		int value = Setting::Get().getBlockSize() / owner->totalByte();
 		{
 			WriteLock lock(m_mutex);
 			m_owner = owner;
 			m_start = pos;
 			m_size = 0;
-			read();
+			m_records.clear();
+			m_records.reserve(value);
 		}
 	}
 	//check two Blocks are same object or not
@@ -58,28 +60,13 @@ namespace liao::PrimedDB
 	}
 	unsigned Block::max() const
 	{
-		ReadLock lock(m_mutex);
 		return Setting::Get().getBlockSize()/m_owner->totalByte();
 	}
-	void Block::read()
+	void Block::writeLine(UCharPtr buffer, unsigned pos)
 	{
-		if (!empty())
+		if (pos<max())
 		{
-			fstream file;
-			{
-				WriteLock lock(m_mutex);
-				file.open(Setting::Get().getDataDirectory() / (m_owner->getName() + ".dat"), ios::in | ios::binary);
-				file.seekg(m_start);
-				while (m_size < max())
-				{
-					file.getline(m_memory, Setting::Get().getBlockSize());
-					m_size++;
-					if (max() - m_size < m_owner->totalByte())
-						break;
-				}
-
-			}
-            file.close();
+			
 		}
 	}
 	void Block::flush()
@@ -118,7 +105,7 @@ namespace liao::PrimedDB
 	bool Block::empty() const
 	{
 		ReadLock lock(m_mutex);
-		return m_memory == nullptr||m_owner == nullptr;
+		return m_size = 0;
 	}
 	unsigned int Block::size() const
 	{
@@ -127,7 +114,6 @@ namespace liao::PrimedDB
 	}
 	char* Block::reference()
 	{
-		ReadLock lock(m_mutex);
 		return m_memory;
 	}
 
@@ -136,30 +122,70 @@ namespace liao::PrimedDB
 		ReadLock lock(m_mutex);
 		return m_owner->totalByte();
 	}
+	void Block::build()
+	{
+		if (m_records.empty())
+		{
+			auto max = Setting::Get().getBlockSize();
+			for (int n = 0;n< max;n+=m_owner->totalByte())
+			{
+				m_records.emplace_back(m_memory + n);
+			}
+		}
+	}
+	TablePtr Block::getOwner()
+	{
+		ReadLock lock(m_mutex);
+        return m_owner;
+	}
 	void Block::remove(unsigned index) const
 	{
 		WriteLock lock(m_mutex);
 		m_owner->setUnavailable(m_start + index);
 		--m_size;
 	}
-	std::pair<unsigned, std::shared_ptr<char[]>> Block::insert(std::shared_ptr<char[]> memory, int number)
+	std::pair<unsigned, std::shared_ptr<char[]>> Block::insert(std::shared_ptr<char[]> memory, unsigned number)
 	{
+		if (!memory) {
+			return { 0, nullptr };
+		}
+
 		unsigned l_byte = byte();
-		int left = Setting::Get().getBlockNumber() / l_byte - m_size;
+		unsigned capacity = Setting::Get().getBlockNumber() / l_byte;
+		unsigned left = capacity - m_size < 0 ? 0: capacity - m_size;
+
+		// 边界检查防止越界写入
+		if (number < 0 || m_size > capacity) {
+			return { static_cast<unsigned>(number), std::move(memory) };
+		}
+
 		unsigned int overflow = 0;
-		if (number>left)
-		{
-			overflow = number - left;
+		if (number > left) {
+			overflow = static_cast<unsigned>(number - left);
 		}
 
 		char* mem = memory.get();
+
 		{
 			WriteLock lock(m_mutex);
-			memcpy_s(m_memory + m_size * l_byte, l_byte * number, memory.get(), l_byte * number);
-			m_size++;
-			if (overflow != 0)
-				memcpy_s(memory.get(), l_byte * overflow, memory.get() + l_byte * (number - overflow), l_byte * overflow);
+			size_t size = std::min(number, left);
+			size_t copy_bytes = static_cast<size_t>(l_byte) * size;
+			if (mem != nullptr)
+				memcpy_s(m_memory + m_size * l_byte, copy_bytes, mem, copy_bytes);
+			for (int n =0;n< size;++n)
+			{
+				m_records.emplace_back(m_memory + m_size * l_byte + n);
+			}
+			m_size += size;
+
+			// 如果有 overflow 数据需要保留，将其前移到 memory 开头
+			if (overflow > 0 && overflow <= static_cast<unsigned>(number)) {
+				size_t move_offset = static_cast<size_t>(l_byte) * (number - overflow);
+				size_t move_bytes = static_cast<size_t>(l_byte) * overflow;
+				memmove(mem, mem + move_offset, move_bytes);  // 安全地重叠区域移动
+			}
 		}
+
 		flush();
 		return std::make_pair(overflow, std::move(memory));
 	}
@@ -182,6 +208,10 @@ namespace liao::PrimedDB
 	ShareMutex& Block::getMutex()
 	{
 		return m_mutex;
+	}
+	std::vector<char*>& Block::getRecords()
+	{
+		return m_records;
 	}
 	Block::~Block()
 	{

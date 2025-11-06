@@ -28,16 +28,18 @@ namespace liao::PrimedDB
 
 		BlockManager();
 
-
+		unsigned allocate();
 		void manager();
 		void rearrange(std::deque<int>&, std::vector<bool>&);
 		void handle(Transection&);
 	public:
 		static unsigned totalRecord(unsigned bytes);
 		void operate(Transection&);
-		unsigned allocate();
+		//table pointer and line number indicate the start of the block
+		unsigned allocate(TablePtr, int pos = -1);
 		void drop(unsigned pos);
 		Block& get_noLock(unsigned);
+		ShareMutex& getMutex();
 		
 		~BlockManager();
 	};

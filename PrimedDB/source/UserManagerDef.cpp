@@ -7,9 +7,11 @@ namespace liao::PrimedDB
 	UserPtr UserManager::constructSystem(string& fileLine)
 	{
 		if (fileLine.empty())
-			return System = make_shared<User>(User::createUser("system", Util::Setting::Get().getSystemPassword(), UserLevel::System, std::move(User::PassWordHash("system"))));
+			System = make_shared<User>(User::createUser("system", Util::Setting::Get().getSystemPassword(), UserLevel::System, std::move(User::PassWordHash("system"))));
 		else
-			return System = make_shared<User>(fileLine);
+			System = make_shared<User>(fileLine);
+		m_allUsers[System->getName()] = System;
+		return System;
 	}
 	
 	UserManager::UserManager()
@@ -43,10 +45,6 @@ namespace liao::PrimedDB
 					ptr = make_shared<User>(cache);
 				m_allUsers[name] = ptr;
 			}
-		}
-		if (m_allUsers.empty())
-		{
-			m_allUsers["system"] = System;
 		}
 	}
 	User& UserManager::GetSystemUser()

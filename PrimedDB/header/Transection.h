@@ -13,19 +13,22 @@ namespace liao::PrimedDB
 	//		|| std::same_as<T, PrimedDB::Session>;
 	//};
 
-	enum class TransectionType
+	enum class SQLType
 	{
-		None,
-		Update,
+		Select,
 		Insert,
-		Delete
+		Update,
+		Delete,
+
+		Create,
+		None
 	};
-	//DYNAMICCON(Concept_TransectionTypeRequired)
+	
 	class Transection
 	{
 		std::string m_id;
 		std::string m_table;
-		TransectionType m_operation;
+		SQLType m_operation;
 		std::string m_operator;
 		int m_blockId;
 		int m_location;
@@ -35,12 +38,12 @@ namespace liao::PrimedDB
 
 	public:
 		Transection();
-		Transection(const std::string& oprtor,const std::string&, TransectionType operation, int blockId, int location, unsigned size = 0, UCharPtr memory = nullptr);
+		Transection(const std::string& oprtor,const std::string&, SQLType operation, int blockId, int location, unsigned size = 0, UCharPtr memory = nullptr);
 		Transection(const std::string& oprtor, const std::string& name,const std::string& str, bool neg = false);
 		Transection(const std::string& oprtor, const std::string& name, bool neg = false);
-		Transection(Transection&&);
-		void operator=(Transection&&);
-		TransectionType getType() const;
+		Transection(Transection&&) noexcept;
+		void operator=(Transection&&) noexcept;
+		SQLType getType() const;
 		const std::string& getOperator()const;
 		const std::string& getTable() const;
 		int getBlockId() const;
