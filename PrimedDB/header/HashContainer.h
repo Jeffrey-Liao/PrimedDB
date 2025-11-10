@@ -51,8 +51,8 @@ namespace liao::Math
 	public:
 		void convertByteToString();
 		static int GetByteSize(HashType);
-		void generate(std::string&& message, HashType type = HashType::SHA256);
-		void generate(const std::string& message, HashType type = HashType::SHA256);
+		void generate(std::string&& message, HashType type = HashType::MD5);
+		void generate(const std::string& message, HashType type = HashType::MD5);
 		HashContainer();
 		HashContainer(const std::string& message);
 		HashContainer(const HashContainer& obj);

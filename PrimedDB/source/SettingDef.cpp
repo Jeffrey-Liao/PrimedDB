@@ -1,4 +1,5 @@
 
+#include "Global.h"
 #include "Setting.h"
 USESTD;
 namespace liao::Util
@@ -7,20 +8,41 @@ namespace liao::Util
 	Setting::Setting()
 	{
 		fs::path programPath = fs::current_path();
-		fs::path compilerPath = programPath/m_compilerDirectory;
-		fs::path dataPath = programPath/m_dataDirectory;
-        fs::path globalPath = programPath/m_globalDirectory;
-		fs::path logPath = programPath/m_logDirectory;
+		m_compilerDirectory = programPath/m_compilerDirectory;
+		m_dataDirectory = programPath/m_dataDirectory;
+		m_globalDirectory = programPath/m_globalDirectory;
+		m_logDirectory = programPath/m_logDirectory;
 
-		if (!fs::exists(compilerPath))
-			fs::create_directory(compilerPath);
-		if (!fs::exists(dataPath))
-            fs::create_directory(dataPath);
-        if (!fs::exists(globalPath))
-            fs::create_directory(globalPath);
-        if (!fs::exists(logPath))
-            fs::create_directory(logPath);
+		if (!fs::exists(m_compilerDirectory))
+			fs::create_directory(m_compilerDirectory);
+		if (!fs::exists(m_dataDirectory))
+            fs::create_directory(m_dataDirectory);
+        if (!fs::exists(m_globalDirectory))
+            fs::create_directory(m_globalDirectory);
+        if (!fs::exists(m_logDirectory))
+            fs::create_directory(m_logDirectory);
+		m_configurationFile = m_globalDirectory / m_configurationFile;
+        m_userFile = m_globalDirectory / m_userFile;
+        m_tableFile = m_globalDirectory /m_tableFile;
+		m_tokenFile = m_compilerDirectory / m_tokenFile;
+		fstream conf(m_systemPassword, ios::in);
+		string buffer;
+		if (!(conf.fail()&&conf.is_open()))
+		{
+			getline(conf, buffer);
+			if (buffer.empty())
+				m_systemPassword = StaticFunc::GetHashKey("system");
+			else
+			{
+				vector<std::string> token;
+				StaticFunc::Split(token, buffer, ':');
+				m_systemPassword = std::move(token[1]);
+			}
+
+		}
+		conf.close();
 	}
+
 	unsigned int Setting::getBlockNumber()const
 	{
         return m_blockNumber;
@@ -36,7 +58,6 @@ namespace liao::Util
 	unsigned int Setting::getSessionNumber()const
 	{
         return m_sessionNumber;
-		
 	}
 	unsigned int Setting::getPort()const
 	{
@@ -49,6 +70,12 @@ namespace liao::Util
 	unsigned Setting::getEnlargePower() const
 	{
 		return m_enlargePower;
+	}
+	void Setting::save(const std::string& key, const std::string& value)
+	{
+		fstream conf(m_configurationFile, ios::out | ios::app);
+        conf << key << ":" << value << endl;
+        conf.close();
 	}
 	Math::HashType Setting::getUserIDHashType() const
 	{
@@ -72,20 +99,38 @@ namespace liao::Util
 		return this->m_port = port;
 	}
 
-	std::string_view Setting::getDataDirectory()const
+	const std::string& Setting::getSystemPassword() const
 	{
-		return m_dataDirectory.data();
+		return m_systemPassword;
 	}
-	std::string_view Setting::getCompilerDirectory()const
+
+	const std::filesystem::path& Setting::getDataDirectory() const
 	{
-		return m_compilerDirectory.data();
+		return m_dataDirectory;
 	}
-	std::string_view Setting::getGlobalDirectory()const
+
+	const std::filesystem::path& Setting::getCompilerDirectory() const
 	{
-		return m_globalDirectory.data();
+		return m_compilerDirectory;
 	}
-	std::string_view Setting::getLogDirectory()const
+
+	const std::filesystem::path& Setting::getGlobalDirectory() const
 	{
-		return m_logDirectory.data();
+		return m_globalDirectory;
+	}
+
+	const std::filesystem::path& Setting::getLogDirectory() const
+	{
+		return m_logDirectory;
+	}
+
+	const std::filesystem::path& Setting::getUserFile() const
+	{
+		return m_userFile;
+	}
+
+	const std::filesystem::path& Setting::getTableFile()const
+	{
+		return m_tableFile;
 	}
 }

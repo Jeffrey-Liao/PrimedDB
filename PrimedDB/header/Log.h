@@ -39,7 +39,7 @@ namespace liao::Infor
 		{
 			std::string m_cache;
 			const LogType TYPE;
-			char m_split = '\t';
+			string m_split = "\t";
 			string m_logFile;
 			static std::mutex LogStreamMutex;
 		private:

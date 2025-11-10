@@ -52,6 +52,27 @@
     <Filter Include="Test\TestSource">
       <UniqueIdentifier>{0ce14194-205e-45b9-a519-fcf1d93f5c0c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Net">
+      <UniqueIdentifier>{a051b311-38ac-4586-ad85-7255215276b9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Net\header">
+      <UniqueIdentifier>{a376306a-625b-4197-bc6f-028c45c651f8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Net\source">
+      <UniqueIdentifier>{b1801bcc-3124-4881-acae-442f6380d6cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UI\header">
+      <UniqueIdentifier>{b9a3aef2-9e46-47b6-8345-648bca9542e3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UI\source">
+      <UniqueIdentifier>{f8454fca-3c60-4c21-b890-359e9a85abca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Compiler\header">
+      <UniqueIdentifier>{5724e333-2c7f-47a2-941c-9130a6089f48}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Compiler\source">
+      <UniqueIdentifier>{18ca1173-0785-41db-91f2-52b3b8321d32}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\LogDef.cpp">
@@ -93,16 +114,10 @@
     <ClCompile Include="source\SessionDef.cpp">
       <Filter>Storage\Source</Filter>
     </ClCompile>
-    <ClCompile Include="source\SchemaDef.cpp">
-      <Filter>Storage\Source</Filter>
-    </ClCompile>
     <ClCompile Include="source\ErrorManagerDef.cpp">
       <Filter>Util\source</Filter>
     </ClCompile>
     <ClCompile Include="source\PageDef.cpp">
-      <Filter>Storage\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="source\DataCache.cpp">
       <Filter>Storage\Source</Filter>
     </ClCompile>
     <ClCompile Include="source\GlobalDef.cpp">
@@ -123,6 +138,24 @@
     <ClCompile Include="source\BlockManagerDef.cpp">
       <Filter>Storage\Source</Filter>
     </ClCompile>
+    <ClCompile Include="source\TransectionDef.cpp">
+      <Filter>Storage\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\TableManagerDef.cpp">
+      <Filter>Storage\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\ParserDef.cpp">
+      <Filter>Compiler\source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\ServerDef.cpp">
+      <Filter>Net\source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\CompilerDef.cpp">
+      <Filter>Compiler\source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\RecordDef.cpp">
+      <Filter>Storage\Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="header\Log.h">
@@ -141,9 +174,6 @@
       <Filter>Storage\Header</Filter>
     </ClInclude>
     <ClInclude Include="header\Table.h">
-      <Filter>Storage\Header</Filter>
-    </ClInclude>
-    <ClInclude Include="header\Schema.h">
       <Filter>Storage\Header</Filter>
     </ClInclude>
     <ClInclude Include="header\User.h">
@@ -179,14 +209,8 @@
     <ClInclude Include="header\ControlManager.h">
       <Filter>Storage\Header</Filter>
     </ClInclude>
-    <ClInclude Include="header\DataCache.h">
-      <Filter>Storage\Header</Filter>
-    </ClInclude>
     <ClInclude Include="header\Page.h">
       <Filter>Storage\Header</Filter>
-    </ClInclude>
-    <ClInclude Include="SyntaxChecker.h">
-      <Filter>Compiler</Filter>
     </ClInclude>
     <ClInclude Include="header\Global.h">
       <Filter>Util\header</Filter>
@@ -214,6 +238,30 @@
     </ClInclude>
     <ClInclude Include="header\BlockManager.h">
       <Filter>Storage\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\Record.h">
+      <Filter>Storage\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\Server.h">
+      <Filter>Net\header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\Parser.h">
+      <Filter>Compiler\header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\Compiler.h">
+      <Filter>Compiler\header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\CommandLine.h">
+      <Filter>Compiler\header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\Syntax.h">
+      <Filter>Compiler\header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\Execute.h">
+      <Filter>Compiler\header</Filter>
+    </ClInclude>
+    <ClInclude Include="header\TokenList.h">
+      <Filter>Compiler\header</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

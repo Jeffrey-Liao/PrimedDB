@@ -1,35 +1,51 @@
 #pragma once
 #include "Block.h"
+#include "DataFile.h"
 #include "Singleton.h"
+#include "TableManager.h"
 #include "Transection.h"
 
 namespace liao::PrimedDB
 {
 	//file structure
-	//first line: length of bits array , bit array.
+	//first line: byte size;
+	//second line: length of bits array, bit array.
+	
 	class BlockManager:public Singleton<BlockManager>
 	{
 		INVITESINGLETON;
-		struct File
-		{
-			std::shared_ptr<std::fstream> m_file;
-			std::vector<bool> m_available;
-			std::vector<bool> m_blocks;
-			File(const std::string& name);
-			~File();
-		};
-		std::unordered_map<std::string, File> m_files;
 
-		//the index queue of m_blocks
-		std::deque<size_t> m_active;
-        std::deque<size_t> m_inactive;
+		std::deque<unsigned> m_active;
+		
 		//store all blocks, which will only enlarge the size.
 		std::vector<Block> m_blocks;
+		std::future<void> m_terminate;
+		std::atomic<bool> m_notify = false, m_end = false;
+		std::condition_variable m_cv;
+		std::deque<Transection> m_pendingOperations;
+		mutable ShareMutex m_mutex;
+		mutable Mutex m_cvMutex;
 
+		std::promise<bool> m_finished;
 		BlockManager();
+
+		unsigned allocate();
+		void manager();
+		void rearrange(std::deque<int>&, std::vector<bool>&);
+		void handle(Transection&);
+		void promote(unsigned pos);
 	public:
-		DYNAMICCON(Concept_TransectionTypeRequired)
-		void opearte(const Transection<T>&);
+		static unsigned totalRecord(unsigned bytes);
+		void operate(Transection&);
+		//table pointer and line number indicate the start of the block
+		unsigned allocate(TablePtr, int pos = -1);
+		unsigned allocateWithOutRead(TablePtr, int pos = -1);
+		void drop(unsigned pos);
+		Block& get_noLock(unsigned);
+		ShareMutex& getMutex();
+
+		std::future<bool> wait();
+		
 		~BlockManager();
 	};
 }

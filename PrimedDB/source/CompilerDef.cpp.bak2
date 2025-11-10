@@ -1,0 +1,381 @@
+#include "Compiler.h"
+#include <sstream>
+#include <regex>
+#include <algorithm>
+#include <cctype>
+#include <ranges>
+#include <iostream>
+
+#include "ErrorManager.h"
+#include "Log.h"
+
+using namespace liao::PrimedDB;
+
+namespace liao::Compiler
+{
+	Token::Token(TokenType t, std::string& v, size_t pos)
+		: type(t), value(std::move(v)), position(pos)
+	{}
+	Result::Result(bool success)
+		: m_success(success)
+	{}
+	Result::Result(bool success, std::string& message, size_t pos)
+		:m_success(success), m_message(std::move(message)), m_errorPosition(pos)
+	{}
+	static const std::vector<std::string> keywords = {
+			"SELECT", "FROM", "WHERE", "INSERT", "INTO", "VALUES",
+			"DELETE", "CREATE", "TABLE", "USER", "AND", "OR", "NOT",
+			"UPDATE", "SET","INTEGER", "VARCHAR", "NUMBER", "NULL"
+	};
+
+	// 辅助函数实现
+	void Compiler::toUpper(std::string& str)
+	{
+		std::transform(str.begin(), str.end(), str.begin(), ::toupper);
+	}
+
+	std::string Compiler::trim(const std::string& str)
+	{
+		size_t first = str.find_first_not_of(static_cast<char>(' '));
+		if (std::string::npos == first) return str;
+		size_t last = str.find_last_not_of(static_cast<char>(' '));
+		return str.substr(first, (last - first + 1));
+	}
+
+	// Token类型检查函数
+	bool Compiler::isKeyword(std::string& token)
+	{
+		toUpper(token);
+		return std::find(keywords.begin(), keywords.end(), token) != keywords.end();
+	}
+
+	bool Compiler::isIdentifier(std::string& token)
+	{
+		if (token.empty()) return false;
+		// 标识符必须以字母开头，可包含字母、数字和下划线
+		if (!std::isalpha(token[0]) && token[0] != '_') return false;
+		if (std::ranges::any_of(token, [](char c)
+			{
+				return !std::isalnum(c);
+			}))
+			return false;
+
+		return !isKeyword(token);
+	}
+
+	bool Compiler::isNumber(std::string& token)
+	{
+		if (token.empty()||(token.size()==1&&!isdigit(token[0]))) return false;
+		auto notNumber = token | std::views::filter([](char c)
+			{
+				return !isdigit(c);
+			});
+		for (auto& ch: notNumber)
+		{
+			if (ch != '-')
+				return false;
+		}
+		return true;
+	}
+
+	bool Compiler::isStringLiteral(std::string& token)
+	{
+		if (token.length() < 2) return false;
+		char left = token.front();
+		char right = token.back();
+		return left == right && left == '\'';
+	}
+
+	TokenType Compiler::getTokenType(std::string& token)
+	{
+		if (isKeyword(token)) return TokenType::KEYWORD;
+		if (isIdentifier(token)) return TokenType::IDENTIFIER;
+		if (isNumber(token)) return TokenType::NUMBER;
+		if (isStringLiteral(token)) return TokenType::STRING_LITERAL;
+		
+		// 检查操作符
+		if (token == "=" || token == "!=" || token == "<" || token == ">" || 
+			token == "<=" || token == ">=" ) {
+			return TokenType::OPERATOR;
+		}
+		else if (token == "AND" || token == "OR")
+			return TokenType::LOGICAL_OPERATOR;
+		else if (token == "NOT")
+            return TokenType::NOT;
+		else if (token == "*")
+			return TokenType::MULTIPLE;
+		// 检查分隔符
+		else if (token == "," ) {
+			return TokenType::DELIMITER;
+		}
+		else if (token == "(")
+			return TokenType::LEFTPAREN;
+		else if (token == ";")
+            return TokenType::END;
+		else if (token == ")")
+			return TokenType::RIGHTPAREN;
+		return TokenType::UNKNOWN;
+	}
+	// 改进的词法分析 - 生成带类型的tokens
+	std::vector<Token> Compiler::parseSQL(const std::string& sql, std::string& error)
+	{
+		std::vector<Token> tokens;
+		std::string currentToken;
+		error += "[ParseError]";
+		bool inQuotes = false;
+		char quoteChar = '"';
+		size_t position = 0;
+		if (sql.empty())
+		{
+			error += "Given command is empty";
+		}
+		else
+		{
+			for (size_t i = 0; i < sql.length(); ++i) {
+				char c = sql[i];
+				position = i;
+				if (!inQuotes) {
+					if (c == '"' || c == '\'') {
+						inQuotes = true;
+						quoteChar = c;
+						currentToken += c;
+					}
+					else if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
+						if (!currentToken.empty()) {
+							TokenType type = getTokenType(currentToken);
+							if (type == TokenType::UNKNOWN)
+							{
+								error += "Invalid token detected";
+								break;
+							}
+							tokens.emplace_back(type, currentToken, position - currentToken.length());
+							currentToken.clear();
+						}
+					}
+					else if (c == ',' || c == '(' || c == ')' || c == ';' || c == '=' || c == '<' || c == '>' || c == '!') {
+						if (!currentToken.empty()) {
+							TokenType type = getTokenType(currentToken);
+							if (type == TokenType::UNKNOWN)
+							{
+								error += "Invalid token detected";
+								break;
+							}
+							tokens.emplace_back(type, currentToken, position - currentToken.length());
+							currentToken.clear();
+						}
+						if (c != ';') {
+							std::string delim(1, c);
+							TokenType type = getTokenType(delim);
+							if (type == TokenType::UNKNOWN)
+							{
+								error += "Invalid token detected";
+								break;
+							}
+							tokens.emplace_back(type, delim, position);
+						}
+					}
+					else {
+						currentToken += c;
+					}
+				}
+				else {
+					currentToken += c;
+					if (c == quoteChar && (i == 0 || sql[i - 1] != '\\')) {
+						inQuotes = false;
+					}
+				}
+			}
+			if (!currentToken.empty()&&error.empty()) {
+				TokenType type = getTokenType(currentToken);
+				tokens.emplace_back(type, currentToken, position - currentToken.length());
+			}
+		}
+		return std::move(tokens);
+	}
+	std::string Compiler::type2string(TokenType type)
+	{
+		if (type == TokenType::EXPRESSION)
+		{
+			return "EXPRESSION";
+		}
+			LEFTPAREN,
+			RIGHTPAREN,
+			KEYWORD,
+			IDENTIFIER,
+			IDENTIFIERS,
+			IDENTIFIER_TABLE,
+			IDENTIFIER_COLUMN,
+			LOGICAL_OPERATOR,
+			COLUMNS,
+			NOT,
+			STRING_LITERAL,
+			VALUE,
+			NUMBER,
+			OR,
+			OPERATOR,
+			DELIMITER,
+			MULTIPLE,
+			REPEAT,
+			END,
+			UNKNOWN
+	}
+	std::future<int> Compiler::ruleMatch(const std::vector<TokenType>& rules, const std::vector<Token>& tokens)
+	{
+		return std::async(std::launch::async, [&]()
+			{
+				bool skip = false;
+                for (int ruleIter = 0,tokenIter = 0; ruleIter<rules.size()&&tokenIter<tokens.size(); ++ruleIter)
+                {
+					if (rules[ruleIter] == TokenType::OR)
+						continue;
+	                if (rules[ruleIter] != tokens[tokenIter].type)
+	                {
+						if (skip)
+						{
+							Util::ErrorManager::Get().set(Util::ErrorLevel::Info,"CompilerInfo", std::format("Token {} is a {} token, but compiler need a {} token")) ;
+							return tokenIter;
+						}
+
+						skip = true;
+						continue;
+	                }
+					if (skip)
+						skip = false;
+					++tokenIter;
+                }
+				return -1;
+			});
+	}
+	bool Compiler::syntaxFailed(std::string& error, const std::string& message)
+	{
+		error += message;
+		return false;
+	}
+	bool Compiler::syntaxCheck(std::vector<Token>& tokens, std::string& error)
+	{
+		error += "[SyntaxError]";
+		if (tokens.empty())
+			return syntaxFailed(error, "No tokens found");
+		auto& first = tokens.front();
+		if (first.type == TokenType::KEYWORD)
+			return syntaxFailed(error, std::format("{} is not a sql keyword.",first.value));
+		if (m_rules.contains(first.value))
+			return syntaxFailed(error, std::format("{} is either not supported by current version of PrimedDB or this keyword cannot be use at the beginning of the sql statement.",first.value));
+
+		auto& ruleSet = m_rules[first.value];
+		std::vector<std::future<int>> ruleMatches;
+		for (auto& rule : ruleSet)
+		{
+			ruleMatches.emplace_back(ruleMatch(rule, tokens));
+		}
+        for (auto& match : ruleMatches)
+		{
+			auto result = match.get();
+			if (result == -1)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// 识别SQL语句类型
+	SQLType Compiler::getSQLType(std::vector<Token>& tokens)
+	{
+		if (tokens.empty()) return SQLType::UNKNOWN;
+		toUpper(tokens[0].value);
+		std::string& firstToken = tokens[0].value;
+		if (firstToken == "SELECT") return SQLType::SELECT;
+		if (firstToken == "INSERT") return SQLType::INSERT;
+		if (firstToken == "DELETE") return SQLType::DELETE;
+		if (firstToken == "CREATE" && tokens.size() > 1) {
+			return SQLType::CREATE;
+		}
+		
+		return SQLType::UNKNOWN;
+	}
+	// 表存在性验证
+
+	// SQL语句验证和分析
+	std::unordered_map<std::string, std::vector<std::vector<TokenType>>> Compiler::m_rules;
+	void Compiler::constructRules()
+	{
+		//select columns from table where condition;
+		std::vector<TokenType> rule = { TokenType::KEYWORD,TokenType::IDENTIFIERS, TokenType::KEYWORD, TokenType::IDENTIFIERS,TokenType::END } ;
+		m_rules["SELECT"].emplace_back(std::move(rule));
+		//select columns from table;
+		rule = { TokenType::KEYWORD,TokenType::IDENTIFIERS, TokenType::KEYWORD, TokenType::IDENTIFIERS,TokenType::KEYWORD,TokenType::EXPRESSION,TokenType::END };
+		m_rules["SELECT"].emplace_back(std::move(rule));
+		//select * from table;
+		rule = { TokenType::KEYWORD,TokenType::MULTIPLE, TokenType::KEYWORD, TokenType::IDENTIFIERS,TokenType::END };
+		m_rules["SELECT"].emplace_back(std::move(rule));
+		//select * from table where condition;
+		rule = {TokenType::KEYWORD,TokenType::MULTIPLE, TokenType::KEYWORD, TokenType::IDENTIFIERS,TokenType::IDENTIFIERS,TokenType::KEYWORD,TokenType::EXPRESSION,TokenType::END };
+		m_rules["SELECT"].emplace_back(std::move(rule));
+
+
+		//INSERT INTO table (columns) VALUES (values);
+		rule = {TokenType::KEYWORD,TokenType::KEYWORD, TokenType::LEFTPAREN,TokenType::IDENTIFIERS,TokenType::RIGHTPAREN,TokenType::KEYWORD,TokenType::LEFTPAREN,TokenType::VALUE,TokenType::RIGHTPAREN,TokenType::END };
+		m_rules["INSERT"].emplace_back(std::move(rule));
+
+		//UPDATE
+		rule = { TokenType::KEYWORD , TokenType::IDENTIFIER,TokenType::KEYWORD,TokenType::EXPRESSION,TokenType::END };
+        m_rules["UPDATE"].emplace_back(std::move(rule));
+        rule = { TokenType::KEYWORD , TokenType::IDENTIFIER,TokenType::KEYWORD,TokenType::EXPRESSION,TokenType::KEYWORD,TokenType::EXPRESSION,TokenType::END };
+		m_rules["UPDATE"].emplace_back(std::move(rule));
+
+		//DELETE
+		rule = { TokenType::KEYWORD , TokenType::KEYWORD, TokenType::IDENTIFIER,TokenType::KEYWORD,TokenType::EXPRESSION,TokenType::END };
+		m_rules["DELETE"].emplace_back(std::move(rule));
+		rule = { TokenType::KEYWORD , TokenType::KEYWORD, TokenType::IDENTIFIER,TokenType::END };
+		m_rules["DELETE"].emplace_back(std::move(rule));
+
+		//EXPRESSION
+		rule = { TokenType::NOT, TokenType::EXPRESSION };
+		m_rules["EXPRESSION"].emplace_back(std::move(rule));
+		rule = { TokenType::LEFTPAREN, TokenType::EXPRESSION,TokenType::RIGHTPAREN };
+		m_rules["EXPRESSION"].emplace_back(std::move(rule));
+	
+		rule = {TokenType::IDENTIFIER, TokenType::OPERATOR,TokenType::IDENTIFIER, TokenType::OR, TokenType::STRING_LITERAL};
+		m_rules["EXPRESSION"].emplace_back(std::move(rule));
+		rule = { TokenType::IDENTIFIER, TokenType::OPERATOR,TokenType::IDENTIFIER,TokenType::OR, TokenType::STRING_LITERAL,TokenType::LOGICAL_OPERATOR, TokenType::EXPRESSION };
+		m_rules["EXPRESSION"].emplace_back(std::move(rule));
+
+		//CREATE
+		rule = { TokenType::KEYWORD, TokenType::KEYWORD ,TokenType::IDENTIFIER, TokenType::LEFTPAREN, TokenType::COLUMNS, TokenType::RIGHTPAREN };
+		m_rules["CREATE"].emplace_back(std::move(rule));
+
+		rule = {TokenType::IDENTIFIER,TokenType::NUMBER,TokenType::REPEAT};
+		m_rules["COLUMNS"].emplace_back(std::move(rule));
+	}
+	Compiler::Compiler()
+	{
+		constructRules();
+	}
+	// 主编译函数
+	std::future<Result> Compiler::compile(UserPtr user, std::string& sql)
+	{
+		return std::async(std::launch::async, [user, sql]()
+			{
+				// 验证SQL语句
+				Transection transection;
+				Record record;
+				std::string error;
+				if (user == nullptr)
+				{
+					error = "User is null";
+					return Result(false, error, 0);
+				}
+				// 词法分析
+				auto tokens = parseSQL(sql, error);
+				if (!error.empty()) {
+					return Result(false, error, 0);
+				}
+				if (syntaxCheck(tokens, error))
+					return Result(false, error, 0);
+
+				error = "We are working hard to support fully functional SQL compiler. But your command is not available for PrimedDB now. :(";
+				return Result(false, error, 0);
+			});
+	}
+}

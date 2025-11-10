@@ -1,78 +1,75 @@
+#include "BlockManager.h"
 #include "Setting.h"
 #include "User.h"
 #include "UserManager.h"
+
 USECRPT;
 USESTD;
 USELIAOMATH;
 namespace liao::PrimedDB
 {
-	void User::linkTables(const vector<string>& line)
+	void User::constructFromFile(const std::string& fileLine)
 	{
-		int start = 4;
-		if (line.size() > start)
+		vector<string> user_table;
+		StaticFunc::Split(user_table, fileLine, '|');
+		if (user_table.empty())
 		{
-			for (;start<line.size(); ++start)
+			Util::ErrorManager::Get().set(Util::ErrorLevel::Fatal, "FileError", "Given file line is incorrect. The structure file might corrupted.", Infor::ClassInfor(THISFUNC, THISFILE));
+		}
+		string& user = user_table[0];
+		vector<string> userInfor;
+		vector<string> tables;
+		StaticFunc::Split(userInfor, user, ':');
+
+		m_name = userInfor[0];
+		m_id = userInfor[1];
+		m_password = userInfor[2];
+		m_level = static_cast<UserLevel>(userInfor[3][0]);
+		if (user_table.size() > 1)
+		{
+			StaticFunc::Split(tables, user_table[1], ':');
+			for (auto& t : tables)
 			{
-				WriteLock lock(m_mutex);
-				m_tables;
+				m_tables[t] = TableManager::Get().get_noLock(t);
 			}
 		}
-	}
-	int User::findTable(const std::string& name) const
-	{
-		ReadLock lock(m_mutex);
-		for (int n = 0;n<m_tables.size();++n)
-		{
-			if (m_tables[n]->getName() == name)
-			{
-				return n;
-			}
-		}
-		return -1;
 	}
 	User::User(const string& fileLine)
 	{
-		vector<string> user_table(2);
-		vector<string> userInfor(5);
-		StaticFunc::Split(user_table, fileLine, '|');
-		const string& userStr= user_table[0];
-		const string& tableStr = user_table[1];
-		StaticFunc::Split(userInfor, userStr, ' ');
-		if (userInfor.size() >= 4)
-		{
-			int n = 0;
-			m_id = userInfor[n++];
-			m_name = userInfor[n++];
-			m_password = userInfor[n++];
-			m_level = static_cast<UserLevel>(stoi(userInfor[n]));
-			linkTables(userInfor);
-		}
+		constructFromFile(fileLine);
+	}
+	User::User(string& id, string& name, string& password, UserLevel level)
+		:m_name(std::move(name)), m_level(level), m_id(std::move(id)),m_password(PassWordHash(password))
+	{
+		m_tables.reserve(5);
 	}
 	User::User(string& name, string& password, UserLevel level)
-		:m_name(std::move(name)), m_level(level),m_id(StaticFunc::GetUniqueId(Util::Setting::Get().getUserIDHashType()))
+		:m_name(std::move(name)), m_level(level),m_id(StaticFunc::GetUniqueId(Util::Setting::Get().getUserIDHashType())), m_password(PassWordHash(password))
 	{
-		changePassword(password);
 		m_tables.reserve(5);
 	}
 	User::User(User&& object) noexcept
 		:m_name(std::move(object.m_name)), m_password(std::move(object.m_password)), m_level(object.m_level), m_id(std::move(object.m_id)),m_tables(std::move(object.m_tables))
 	{
 	}
-	User User::createUser(std::string name, std::string password, UserLevel level)
-	{
-		return User(name, password, level);
-	}
 	User::~User()
 	{
-		if (!m_tables.empty())
+		if (m_name != "system")
 		{
-			for (int n = 0; n < m_tables.size(); ++n)
+			for (auto& table : m_tables)
 			{
-				m_tables[n].reset();
+				TableManager::transfer(*this, table.second, UserManager::Get().GetSystemUser());
 			}
 		}
-		m_tables.clear();
 	}
+	User User::createUser(std::string name, std::string password, UserLevel level,string id)
+	{
+		if (id.empty())
+			return User(name, password, level);
+		else
+			return User(id, name, password, level);
+	}
+	
 	const string& User::getName()const
 	{
 		ReadLock lock(m_mutex);
@@ -94,38 +91,7 @@ namespace liao::PrimedDB
 		ReadLock lock(m_mutex);
 		return m_id;
 	}
-	const vector<TablePtr>& User::getTables()const
-	{
-		ReadLock lock(m_mutex);
-		return m_tables;
-	}
-	TablePtr User::getTable(const string& name)
-	{
-		int index = findTable(name);
-		if ( index != -1)
-		{
-			ReadLock lock(m_mutex);
-			return m_tables[index];
-		}
-		return nullptr;
-	}
-	const TablePtr User::getTable(const string& name) const
-	{
-		int index = findTable(name);
-		if (index != -1)
-		{
-			ReadLock lock(m_mutex);
-			return m_tables[index];
-		}
-		return nullptr;
-	}
-	int User::tableCount() const
-	{
-		ReadLock lock(m_mutex);
-		return m_tables.size();
-	}
-	//1 GREATER, 0 EQUAL, -1 LESS
-	int User::compare(const User& other) const 
+	int User::compare(const User& other) const
 	{
 		int value = static_cast<int>(other.getLevel());
 		ReadLock lock(m_mutex);
@@ -136,47 +102,91 @@ namespace liao::PrimedDB
 		ReadLock lock(m_mutex);
 		return m_level >= level;
 	}
-
-	TablePtr User::createTable(std::string schema, std::string name, UserLevel permission)
+	bool User::validate(const std::string& password) const
 	{
-		{
-			ReadLock lock(m_mutex);
-			if (findTable(name) != -1||name.empty())
-			{
-				return nullptr;
-			}
-		}
-		WriteLock lock(m_mutex);
-		m_tables.emplace_back(new Table(*this, name,permission));
-		return m_tables[m_tables.size()-1];
+		string temp = PassWordHash(password);
+		return validateWithHash(temp);
+	}
+	bool User::validateWithHash(const std::string& password) const
+	{
+		ReadLock lock(m_mutex);
+		return m_password == password;
 	}
 	bool User::rename(string& name)
 	{
 		WriteLock lock(m_mutex);
-		if (name == "null"|| UserManager::Get().exist(name))
+		if (name == "null" || UserManager::Get().exist(name))
 			return false;
 		m_name = std::move(name);
 		return true;
 	}
+	const std::unordered_map<std::string, TablePtr>& User::getTables()const
+	{
+		ReadLock lock(m_mutex);
+		return m_tables;
+	}
+	TablePtr User::getTable(const string& name)const
+	{
+		ReadLock lock(m_mutex);
+		if (m_tables.contains(name))
+			return m_tables.at(name);
+		else
+			return nullptr;
+	}
+	unsigned User::tableCount() const
+	{
+		ReadLock lock(m_mutex);
+		return m_tables.size();
+	}
+	//1 GREATER, 0 EQUAL, -1 LESS
+	
+
+	TablePtr User::createTable(std::string name, UserLevel permission, deque<Column>& columns)
+	{
+		bool contains;
+		{
+			ReadLock lock(m_mutex);
+			contains = m_tables.contains(name);
+		}
+		if (!contains)
+		{
+			auto opt = TableManager::Get().add(*this, name, columns);
+			if (opt)
+			{
+				WriteLock lock(m_mutex);
+				m_tables[name] = opt;
+				return opt;
+			}
+		}
+		return nullptr;
+	}
+	
 	void User::dropTable(const string& name)
 	{
-		int index = findTable(name);
 		WriteLock lock(m_mutex);
-		m_tables.erase(m_tables.begin() + index);
-
+		m_tables.erase(name);
 	}
-	void User::renameTable(const string&  name, string&  newName)
+	void User::renameTable(const string& name, string&  newName)
 	{
-		int index = findTable(name);
+		if (m_tables.contains(name))
+		{
+			m_tables[name]->rename(newName);
+		}
+	}
+	void User::addTable(TablePtr table)
+	{
 		WriteLock lock(m_mutex);
-		m_tables[index]->rename(newName);
+		if (table)
+		{
+			m_tables[table->getName()] = table;
+		}
 	}
 	void User::changePassword(const string& rawText)
 	{
 		WriteLock lock(m_mutex);
-		m_password = PassWordHash(rawText);
+		m_password = std::move(PassWordHash(rawText));
 	}
-	void User::setPassword(string&  hash)
+	void User::setPassword(string& hash)
 	{
 		WriteLock lock(m_mutex);
 		m_password = std::move(hash);
@@ -187,28 +197,39 @@ namespace liao::PrimedDB
 		container.generate(rawText);
 		return container.getHashHex();
 	}
-	bool User::validate(const std::string& password) const
-	{
-		ReadLock lock(m_mutex);
-		return m_password == password;
-	}
+	
 	void User::setLevel(UserLevel level)
 	{
 		WriteLock lock(m_mutex);
 		m_level = level;
 	}
+	void User::submit(Transection&& operation)
+	{
+		WriteLock lock(m_mutex);
+		m_pendingOperations.emplace_back(std::move(operation));
+	}
+	void User::commit()
+	{
+		WriteLock lock(m_mutex);
+		while (!m_pendingOperations.empty())
+		{
+			BlockManager::Get().operate(m_pendingOperations.front());
+			m_pendingOperations.pop_front();
+		}
+	}
 	string User::toString() const
 	{
 		std::ostringstream oss;
 		ReadLock lock(m_mutex);
-		oss << format("{} {} {} {}|", m_id, m_name, m_password, static_cast<int>(m_level));
-		for (int n = 0; n < m_tables.size(); ++n)
+		oss << format("{}:{}:{}:{}|",  m_name, m_id, m_password, static_cast<int>(m_level));
+		for (auto&  table : m_tables)
 		{
-			if (n + 1 <= m_tables.size()&& n != 0)
-				oss << ',';
-			oss << m_tables[n]->getName();
+			oss << table.first<<":";
 		}
-		return oss.str();
+		string str = std::move(oss.str());
+		if (!m_tables.empty())
+			str.pop_back();
+		return str;
 	}
 	TablePtr User::operator[](const string&  name)
 	{

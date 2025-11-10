@@ -1,35 +1,62 @@
 #pragma once
 #include "Global.h"
-#include "User.h"
 
 namespace liao::PrimedDB
 {
-	class Session;
-	class Schema;
-	DYNAMIC
-	concept Concept_TransectionTypeRequired = requires
+	//DYNAMIC
+	//	concept Concept_TransectionTypeRequired = requires
+	//{
+	//	std::same_as<T, PrimedDB::Column>
+	//		|| std::same_as<T, PrimedDB::User>
+	//		|| std::same_as<T, PrimedDB::Table>
+	//		|| std::same_as<T, PrimedDB::Schema>
+	//		|| std::same_as<T, PrimedDB::Session>;
+	//};
+
+	enum class SQLType
 	{
-		std::same_as<T, PrimedDB::Column>
-			|| std::same_as<T, PrimedDB::User>
-			|| std::same_as<T, PrimedDB::Table>
-			|| std::same_as<T, PrimedDB::Schema>
-			|| std::same_as<T,PrimedDB::Session>;
+		Select,
+		Insert,
+		Update,
+		Delete,
+
+		Create,
+		None
 	};
-	DYNAMICCON(Concept_TransectionTypeRequired)
+	
 	class Transection
 	{
-		
+		std::string m_id;
+		std::string m_table;
+		SQLType m_operation;
+		std::string m_operator;
+		int m_blockId;
+		int m_location;
+		bool m_valid;
+		unsigned m_size;
+		SCharPtr m_memory;
 
-		ShareMutex m_mutex;
 	public:
-		Transection(User& m_operator,T& target,std::string& operation)
-			: m_operator(m_operator),m_target(target),m_operation(std::move(operation))
-		{
-			m_id = StaticFunc::GetUniqueId();
-		}
-		std::string toString()
-		{
-			return std::format("{} {}",m_id,m_operator.getId());
-		}
+		Transection();
+		Transection(const std::string& oprtor,const std::string&, SQLType operation, int blockId, int location, unsigned size = 0, UCharPtr memory = nullptr);
+		Transection(const std::string& oprtor, const std::string& name,const std::string& str, bool neg = false);
+		Transection(const std::string& oprtor, const std::string& name, bool neg = false);
+		Transection(Transection&&) noexcept;
+		void operator=(Transection&&) noexcept;
+		SQLType getType() const;
+		const std::string& getOperator()const;
+		const std::string& getTable() const;
+		int getBlockId() const;
+		void setBlockId(int);
+		int getLocation() const;
+		unsigned size() const;
+		bool isValid() const;
+		SCharPtr getMemory();
+		void setValid();
+		void setInvalid();
+		std::string toString() const;
+		void fromString(const std::string& str);
+		void negFromString(const std::string& str);
+        ~Transection();
 	};
 }

@@ -3,9 +3,11 @@
 #include <iostream>
 #include <ctime>
 #include <sstream>
+#include "Timestamp.h"
 
 #include "Setting.h"
 using namespace std;
+using namespace liao::Util;
 namespace liao::Infor
 {
 	mutex Log::LogStream::LogStreamMutex;
@@ -16,12 +18,8 @@ namespace liao::Infor
 	static string GetTime()
 	{
 		lock_guard<mutex> lock(timeMutex);
-		time_t now = time(nullptr);
-		tm local_time;
-		localtime_s(&local_time, &now);
-		ostringstream oss;
-		oss << put_time(&local_time, "[%F %T]");  // 格式示例: [2023-04-05 15:30:45]
-		return oss.str();
+		auto now = TimeStamp::Now();
+		return now.getString();
 	}
 	void Log::asyncFileHandler()
 	{
@@ -179,7 +177,7 @@ namespace liao::Infor
 	{
 		if (name != "")
 		{
-			auto curPath = fs::current_path()/ LogFilePath/name;
+			auto curPath = fs::current_path()/ LogFilePath/(name+".log");
             m_logFile = curPath.string();
 		}
 		return *this;
@@ -210,7 +208,7 @@ namespace liao::Infor
 	}
 	string Log::LogFilePath = "log";
 	Log::LogStream::LogStream(LogType type)
-		:TYPE(type), m_cache(format("{} - [{}]:", GetTime(), getLabel(type)))
+		:TYPE(type), m_cache(format("{} - [{}]:  ",GetTime(), getLabel(type)))
 	{}
 	Log::LogStream::LogStream(Log::LogStream && mObject) noexcept
 		: TYPE(mObject.TYPE), m_cache(std::move(mObject.m_cache)),m_logFile(std::move(mObject.m_logFile)),m_split(mObject.m_split)
@@ -225,7 +223,8 @@ namespace liao::Infor
 	}
 	Log::LogStream& Log::LogStream::append(const string& message)
 	{
-		m_cache += " ";
+		if(!m_cache.empty()&&m_cache.back()!=':')
+			m_cache += m_split;
 		m_cache += message;
 		return *this;
 	}

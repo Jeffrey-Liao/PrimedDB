@@ -4,6 +4,7 @@
 #include <stack>
 
 #include "TimeStamp.h"
+#include "ClassInfor.h"
 #include "Singleton.h"
 
 namespace liao::Util
@@ -28,11 +29,12 @@ namespace liao::Util
         std::string m_name;
         std::string m_message;
         TimeStamp m_errorTime;
+        Infor::ClassInfor m_info;
         Error() = default;
         Error(const Error&) = default;
-        Error(Error&&);
-        Error(ErrorLevel, std::string& , std::string&);
-        Error(ErrorLevel, std::string_view, std::string_view);
+        Error(Error&&) noexcept;
+        Error(ErrorLevel, std::string& , std::string&, const Infor::ClassInfor&);
+        Error(ErrorLevel, std::string_view, std::string_view,const Infor::ClassInfor&);
         bool operator==(Error& error);
         Error& operator=(Error&& error);
     };
@@ -46,7 +48,7 @@ namespace liao::Util
         std::unordered_map <ErrorLevel, std::vector<ErrorHandler>> m_serviceByLevel;
         std::atomic<bool> end = false;
         mutable ShareMutex m_mutex;
-        mutable ShareMutex m_errorMutex;
+        mutable ShareMutex m_handleMutex;
         mutable std::mutex m_cvmutex;
         std::atomic<bool> m_reported = false;
         std::future<void> m_asyncTerminate;
@@ -57,12 +59,13 @@ namespace liao::Util
         ErrorManager();
     public:
         void set(Error& error);
-        void set(ErrorLevel level, std::string& error,std::string& errorMessage);
-        void set(ErrorLevel level, std::string_view error, std::string_view errorMessage);
+        void set(ErrorLevel level, std::string& error,std::string& m_message,const Infor::ClassInfor& info);
+        void set(ErrorLevel level, std::string_view error, std::string_view m_message,const Infor::ClassInfor& info);
+        void set(ErrorLevel level, std::string_view error, std::string_view m_message);
         template<class F, class... Args>
         void subscribe(ErrorLevel level, F&& func, Args&&... args)
         {
-            WriteLock lock(m_mutex);
+            WriteLock lock(m_handleMutex);
             m_serviceByLevel[level].emplace_back(
                 [func = std::forward<F>(func), args_tuple = std::make_tuple(std::forward<Args>(args)...)](Error& error) mutable
                 {
@@ -77,7 +80,7 @@ namespace liao::Util
         template<class F, class... Args>
         void subscribe(std::string_view error, F&& func, Args&&... args)
         {
-            WriteLock lock(m_mutex);
+            WriteLock lock(m_handleMutex);
             m_serviceByName[error.data()].emplace_back(
                 [func = std::forward<F>(func), args_tuple = std::make_tuple(std::forward<Args>(args)...)]() mutable
                 {

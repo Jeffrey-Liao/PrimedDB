@@ -4,32 +4,35 @@
 USESTD;
 namespace liao::Util
 {
+    static TimeStamp NOW = TimeStamp::Now();
     static void ErrorLog(Error& error)
     {
-        Infor::Log::Get()[Infor::LogType::Error].openToFile(std::string("error.log"))<<"Report an error:" << error.m_name << error.m_message << error.m_errorTime.getString() << Infor::Log::LogEndl;
+
+        ;
+        Infor::Log::Get()[Infor::LogType::Error].openToFile("error"+ NOW.getDate()).split('-') << error.m_name << error.m_message << error.m_info << Infor::Log::LogEndl;
     }
     static void FatalLog(Error& error)
     {
-        Infor::Log::Get()[Infor::LogType::Fatal].openToFile(std::string("fatal.log")) << "Report an error:" << error.m_name << error.m_message << error.m_errorTime.getString() << Infor::Log::LogEndl;
+        Infor::Log::Get()[Infor::LogType::Fatal].openToFile(std::string("fatal"+ NOW.getDate())).split('-') << error.m_name << error.m_message << error.m_info << Infor::Log::LogEndl;
     }
     static void WarningLog(Error& error)
     {
-        Infor::Log::Get()[Infor::LogType::Warning].openToFile(std::string("warning.log")) << "Report an error:" << error.m_name << " " << error.m_message << " " << error.m_errorTime.getString() << Infor::Log::LogEndl;
+        Infor::Log::Get()[Infor::LogType::Warning].openToFile(std::string("warning"+ NOW.getDate())).split('-') << error.m_name << error.m_message << Infor::Log::LogEndl;
     }
     static void InfoLog(Error& error)
     {
-        Infor::Log::Get()[Infor::LogType::Info].openToFile(std::string("Info.log")) << "Report an error:" << error.m_name << " " << error.m_message << " " << error.m_errorTime.getString() << Infor::Log::LogEndl;
+        Infor::Log::Get()[Infor::LogType::Info].split('-') << error.m_name  << error.m_message << Infor::Log::LogEndl;
     }
-    Error::Error(ErrorLevel level, std::string& name, std::string& message)
-        :m_level(level),m_name(std::move(name)),m_message(std::move(message)),m_errorTime(TimeStamp::Now())
+    Error::Error(ErrorLevel level, std::string& name, std::string& message,const Infor::ClassInfor& info)
+        :m_level(level),m_name(std::move(name)),m_message(std::move(message)),m_errorTime(TimeStamp::Now()),m_info(info)
     {
     }
-    Error::Error(ErrorLevel, std::string_view name, std::string_view message)
-        :m_level(ErrorLevel::Info), m_name(name), m_message(message), m_errorTime(TimeStamp::Now())
+    Error::Error(ErrorLevel, std::string_view name, std::string_view message,const Infor::ClassInfor& info)
+        :m_level(ErrorLevel::Info), m_name(name), m_message(message), m_errorTime(TimeStamp::Now()),m_info(info)
     {
     }
-    Error::Error(Error&& move)
-        :m_name(std::move(move.m_name)), m_level(move.m_level), m_message(std::move(move.m_message)), m_errorTime(std::move(move.m_errorTime))
+    Error::Error(Error&& move) noexcept
+        :m_name(std::move(move.m_name)), m_level(move.m_level), m_message(std::move(move.m_message)), m_errorTime(std::move(move.m_errorTime)),m_info(move.m_info)
     {}
     bool Error::operator==(Error& error)
     {
@@ -41,12 +44,12 @@ namespace liao::Util
         m_level = error.m_level;
         m_message = std::move(error.m_message);
         m_name = std::move(error.m_name);
+        m_info = error.m_info;
         return *this;
     }
     void ErrorManager::publish()
     {
         unique_lock<mutex> cvLock(m_cvmutex);
-        vector<ErrorHandler> levelHandlers, nameHandlers;
         while (1)
         {
             m_conditionVar.wait(cvLock, [&]()
@@ -65,15 +68,13 @@ namespace liao::Util
                         break;
                     error = std::move(m_errors.front());
                     m_errors.pop_front();
-
                 }
                 {
-                    ReadLock lock(m_mutex);
-                    levelHandlers = m_serviceByLevel[error.m_level];
-                    nameHandlers = m_serviceByName[error.m_name];
+                    ReadLock lock(m_handleMutex);
+                    send(m_serviceByLevel[error.m_level], error);
+                    send(m_serviceByName[error.m_name], error);
                 }
-                send(levelHandlers, error);
-                send(nameHandlers, error);
+                
                 //pair<ErrorLevel, string> cmpPair = make_pair(level,name);
             }
             m_reported = false;
@@ -99,15 +100,23 @@ namespace liao::Util
     }
 
    
-    void ErrorManager::set(ErrorLevel level, std::string& error, std::string& errorMessage)
+    void ErrorManager::set(ErrorLevel level, std::string& error, std::string& m_message, const Infor::ClassInfor& info)
     {
-        Error errorObject(level, error, errorMessage);
+        Error errorObject(level, error, m_message, info);
         set(errorObject);
     }
-    void ErrorManager::set(ErrorLevel level, std::string_view error, std::string_view errorMessage)
+    void ErrorManager::set(ErrorLevel level, std::string_view error, std::string_view m_message,const Infor::ClassInfor& infor)
     {
-        Error errorObject(level, error, errorMessage);
+        Error errorObject(level, error, m_message,infor);
         set(errorObject);
+    }
+    void ErrorManager::set(ErrorLevel level, std::string_view error, std::string_view m_message)
+    {
+        Error errorObject(level, error, m_message, Infor::ClassInfor());
+        WriteLock lock(m_mutex);
+        m_errors.emplace_back(errorObject);
+        m_reported = true;
+        m_conditionVar.notify_one();
     }
    
     void ErrorManager::set(Error& error)
@@ -119,7 +128,6 @@ namespace liao::Util
             m_reported = true;
         }
         m_conditionVar.notify_one();
-        
     }
     ErrorManager::~ErrorManager()
     {

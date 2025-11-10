@@ -1,0 +1,124 @@
+#include <regex>
+
+#include "Compiler.h"
+using namespace liao::PrimedDB;
+namespace liao::Compiler
+{
+	std::future<Result> Compiler::compile(PrimedDB::UserPtr ptr, std::string& command)
+	{
+		return std::async(std::launch::async, [&]() -> Result
+			{
+				if (ptr != nullptr)
+				{
+                    std::string upperSql = command;
+                    std::transform(upperSql.begin(), upperSql.end(),
+                        upperSql.begin(), ::toupper);
+
+                    if (upperSql.find("SELECT") != std::string::npos) {
+                        parseSelect(command);
+                    }
+                    else if (upperSql.find("INSERT") != std::string::npos) {
+                        parseInsert(command);
+                    }
+                    else if (upperSql.find("DELETE") != std::string::npos) {
+                        parseDelete(command);
+                    }
+				}
+				return Result();
+			});
+		
+	}
+
+    Transection Compiler::parseSelect(const std::string& sql)
+    {
+        Transection transaction;
+        transaction.setType(TransactionType::SELECT);
+
+        // Extract table name
+        std::regex tableRegex(R"(FROM\s+(\w+))", std::regex_constants::icase);
+        std::smatch match;
+        if (std::regex_search(sql, match, tableRegex)) {
+            transaction.setTableName(match[1].str());
+        }
+
+        // Extract columns (if specified)
+        std::regex selectRegex(R"(SELECT\s+(.+?)\s+FROM)",
+            std::regex_constants::icase);
+        if (std::regex_search(sql, match, selectRegex)) {
+            std::string columnsStr = match[1].str();
+            // Process columns...
+        }
+
+        return transaction;
+    }
+
+    Transection Compiler::parseInsert(const std::string& sql)
+    {
+        Transection transaction;
+        transaction.setType(TransactionType::INSERT);
+
+        // Extract table name
+        std::regex intoRegex(R"(INSERT\s+INTO\s+(\w+))",
+            std::regex_constants::icase);
+        std::smatch match;
+        if (std::regex_search(sql, match, intoRegex)) {
+            transaction.setTableName(match[1].str());
+        }
+
+        // Extract values
+        std::regex valuesRegex(R"(VALUES\s*\((.+?)\))", std::regex_constants::icase);
+        if (std::regex_search(sql, match, valuesRegex)) {
+            std::string valuesStr = match[1].str();
+            // Process values...
+        }
+
+        return transaction;
+    }
+
+    Transection Compiler::parseDelete(const std::string& sql)
+    {
+        Transection transaction;
+        transaction.setType(TransactionType::DELETE);
+
+        // Extract table name
+        std::regex fromRegex(R"(DELETE\s+FROM\s+(\w+))",
+            std::regex_constants::icase);
+        std::smatch match;
+        if (std::regex_search(sql, match, fromRegex)) {
+            transaction.setTableName(match[1].str());
+        }
+
+        return transaction;
+    }
+
+    std::vector<std::string> Compiler::tokenize(const std::string& sql)
+    {
+        std::vector<std::string> tokens;
+        std::stringstream ss(sql);
+        std::string token;
+
+        while (ss >> token) {
+            tokens.push_back(token);
+        }
+
+        return tokens;
+    }
+
+    std::string Compiler::extractTableName(const std::string& sql)
+    {
+        // Implementation to extract table name from SQL
+        return "";
+    }
+
+    std::vector<std::string> Compiler::extractColumns(const std::string& sql)
+    {
+        // Implementation to extract column names
+        return {};
+    }
+
+    std::vector<std::string> Compiler::extractValues(const std::string& sql)
+    {
+        // Implementation to extract values
+        return {};
+    }
+}
