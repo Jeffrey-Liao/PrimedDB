@@ -10,9 +10,27 @@
 #include "Log.h"
 
 using namespace liao::PrimedDB;
-
+using namespace std;
 namespace liao::Compiler
 {
+	static void CallError(const string& error, const string& message, Infor::ClassInfor infor)
+	{
+		Util::ErrorManager::Get().set(
+			Util::ErrorLevel::Error,
+			error, message, infor
+		);
+	}
+	static void CallInfo(const string& error, const string& message)
+	{
+		StaticFunc::WriteInfo(error, message);
+	}
+	static void CallWarning(const string& error, const string& message)
+	{
+		Util::ErrorManager::Get().set(
+			Util::ErrorLevel::Info,
+			error, message
+		);
+	}
 #define ERROR_HEAD "[ERROR]:"
 	Token::Token(TokenType t, std::string& v, size_t pos)
 		: type(t), value(std::move(v)), position(pos)
@@ -54,15 +72,15 @@ namespace liao::Compiler
 	{}
 	SQLType Compiler::ExecuteBody::getTask(const std::string& token)
 	{
-		if (token == "SELECT")
+		if (token == "select")
             return SQLType::Select;
-        if (token == "INSERT")
+        if (token == "insert")
             return SQLType::Insert;
-        if (token == "UPDATE")
+        if (token == "update")
             return SQLType::Update;
-        if (token == "CREATE")
+        if (token == "create")
             return SQLType::Create;
-        if (token == "DELETE")
+        if (token == "delete")
             return SQLType::Delete;
         return SQLType::None;
 	}
@@ -115,9 +133,9 @@ namespace liao::Compiler
 					break;
 				if (tokens[tokenIter].type == TokenType::KEYWORD)
 				{
-					if (tokens[tokenIter].value == "FROM")
+					if (tokens[tokenIter].value == "from")
 						fromDetected = true;
-					if (tokens[tokenIter].value == "WHERE")
+					if (tokens[tokenIter].value == "where")
 						whereDetected = true;
 				}
 				else if (tokens[tokenIter].type == TokenType::MULTIPLE)
@@ -148,7 +166,7 @@ namespace liao::Compiler
 		{
 			if (tokens[tokenIter].type == TokenType::KEYWORD)
 			{
-				values = tokens[tokenIter].value == "VALUES";
+				values = tokens[tokenIter].value == "values";
 			}
 			if (tokens[tokenIter].type == TokenType::SIZE)
 			{
@@ -175,8 +193,8 @@ namespace liao::Compiler
 			}
 		}
 	}
-	//DELETE FROM table_name
-	/*WHERE condition;*/
+	//delete from table_name
+	/*where condition;*/
 	void Compiler::ExecuteBody::deleteConstructor(std::deque<Token>& tokens)
 	{
 		std::vector<Entity> listEntities;
@@ -185,9 +203,9 @@ namespace liao::Compiler
 		{
 			if (tokens[tokenIter].type == TokenType::KEYWORD)
 			{
-				if (tokens[tokenIter].value == "USER")
+				if (tokens[tokenIter].value == "user")
 					type = 1;
-				else if (tokens[tokenIter].value == "SESSION")
+				else if (tokens[tokenIter].value == "session")
                     type = 2;
 			}
 			else if (tokens[tokenIter].type == TokenType::IDENTIFIER)
@@ -220,8 +238,8 @@ namespace liao::Compiler
 			}
 		}
 	}
-	//UPDATE table_name
-	//	SET column1 = value1 column2 = value2 ...
+	//update table_name
+	//	set column1 = value1 column2 = value2 ...
 	void Compiler::ExecuteBody::updateConstructor(std::deque<Token>& tokens)
 	{
 		std::vector<Entity> listEntities;
@@ -234,7 +252,7 @@ namespace liao::Compiler
 		{
 			if (tokens[tokenIter].type == TokenType::KEYWORD)
 			{
-				if (tokens[tokenIter].value == "WHERE")
+				if (tokens[tokenIter].value == "where")
 					m_operations.emplace(m_operations.size(), listEntities);
 				continue;
 			}
@@ -262,7 +280,7 @@ namespace liao::Compiler
 		}
 	}
 
-	//CREATE TABLE table_name(
+	//create table table_name(
 	//	column1 datatype[constraints],
 	//	column2 datatype[constraints],
 	//	...
@@ -296,13 +314,20 @@ namespace liao::Compiler
 							listEntities.emplace_back(DataType::Column, tokens[i].value);
 						else if (tokens[i].type == TokenType::DATATYPE)
 						{
-							listEntities.emplace_back(DataType::Type, tokens[i].value);
+							if (tokens[i].value == "int")
+								listEntities.emplace_back(DataType::Int, tokens[i].value);
+							else
+								listEntities.emplace_back(DataType::String, tokens[i].value);
 						}
 						else if (tokens[i].type == TokenType::NUMBER)
 							listEntities.emplace_back(DataType::Number, tokens[i].value);
+						if (listEntities.size()==3)
+						{
+							m_operations.emplace(m_operations.size(), std::move(listEntities));
+							listEntities.clear();
+						}
 					}
-					m_operations.emplace(m_operations.size(),std::move(listEntities));
-					listEntities.clear();
+					
 				}
 
 			}
@@ -358,11 +383,11 @@ namespace liao::Compiler
 	}
 	//keywords list
 	static const std::vector<std::string> keywords = {
-			"SELECT", "FROM", "WHERE", "INSERT", "INTO", "VALUES",
-			"DELETE", "CREATE", "TABLE", "USER",
-			"UPDATE", "SET", "NULL","DATABASE","SESSION"
+			"select", "from", "where", "insert", "into", "values",
+			"delete", "create", "table", "user",
+			"update", "set", "null","database","session"
 	};
-	static const std::vector<std::string> dataType={"INT","NUMBER","VARCHAR","INTEGER", "NUMBER" };
+	static const std::vector<std::string> dataType={"int","number","varchar","integer" };
 	//map of syntax rules
 	std::unordered_map<std::string, std::vector<std::vector<TokenType>>> Compiler::m_rules;
 
@@ -370,76 +395,76 @@ namespace liao::Compiler
 	{
 		//select columns from table where condition;
 		std::vector<TokenType> rule = { TokenType::KEYWORD,TokenType::MULTIPLE, TokenType::KEYWORD, TokenType::IDENTIFIERS,TokenType::IDENTIFIERS,TokenType::KEYWORD,TokenType::EXPRESSION,TokenType::END };
-		m_rules["SELECT"].emplace_back(std::move(rule));
+		m_rules["select"].emplace_back(std::move(rule));
 		rule = { TokenType::KEYWORD,TokenType::MULTIPLE, TokenType::KEYWORD, TokenType::IDENTIFIERS,TokenType::END };
-		m_rules["SELECT"].emplace_back(std::move(rule));
+		m_rules["select"].emplace_back(std::move(rule));
 		rule = { TokenType::KEYWORD,TokenType::IDENTIFIERS, TokenType::KEYWORD, TokenType::IDENTIFIERS,TokenType::END };
-		m_rules["SELECT"].emplace_back(std::move(rule));
+		m_rules["select"].emplace_back(std::move(rule));
 		//select columns from table;
 		rule = { TokenType::KEYWORD,TokenType::IDENTIFIERS, TokenType::KEYWORD, TokenType::IDENTIFIERS,TokenType::KEYWORD,TokenType::EXPRESSION,TokenType::END };
-		m_rules["SELECT"].emplace_back(std::move(rule));
+		m_rules["select"].emplace_back(std::move(rule));
 		//select * from table;
 
 		//select * from table where condition;
 
 
 
-		//INSERT INTO table (columns) VALUES (values);
+		//insert into table (columns) values (values);
 		rule = { TokenType::KEYWORD,TokenType::KEYWORD, TokenType::IDENTIFIER,TokenType::LEFTPAREN,TokenType::IDENTIFIERS,TokenType::RIGHTPAREN,TokenType::KEYWORD,TokenType::LEFTPAREN,TokenType::VALUE,TokenType::RIGHTPAREN,TokenType::END };
-		m_rules["INSERT"].emplace_back(std::move(rule));
+		m_rules["insert"].emplace_back(std::move(rule));
 
-		//UPDATE
+		//update
 		rule = { TokenType::KEYWORD , TokenType::IDENTIFIER,TokenType::KEYWORD,TokenType::REPEAT, TokenType::EXPRESSION, TokenType::KEYWORD,TokenType::EXPRESSION,TokenType::END };
-		m_rules["UPDATE"].emplace_back(std::move(rule));
+		m_rules["update"].emplace_back(std::move(rule));
 
-		//DELETE
+		//delete
 		rule = { TokenType::KEYWORD , TokenType::KEYWORD, TokenType::IDENTIFIER,TokenType::KEYWORD,TokenType::EXPRESSION,TokenType::END };
-		m_rules["DELETE"].emplace_back(std::move(rule));
+		m_rules["delete"].emplace_back(std::move(rule));
 		rule = { TokenType::KEYWORD , TokenType::KEYWORD, TokenType::IDENTIFIER,TokenType::END };
-		m_rules["DELETE"].emplace_back(std::move(rule));
+		m_rules["delete"].emplace_back(std::move(rule));
 
 		////EXPRESSION
 		//rule = { TokenType::NOT, TokenType::EXPRESSION };
-		//m_rules["EXPRESSION"].emplace_back(std::move(rule));
+		//m_rules["expression"].emplace_back(std::move(rule));
 		rule = { TokenType::LEFTPAREN, TokenType::EXPRESSION,TokenType::RIGHTPAREN };
-		m_rules["EXPRESSION"].emplace_back(std::move(rule));
+		m_rules["expression"].emplace_back(std::move(rule));
 		rule = { TokenType::IDENTIFIER, TokenType::OPERATOR, TokenType::STRING_LITERAL, TokenType::LOGICAL_OPERATOR,TokenType::EXPRESSION };
-		m_rules["EXPRESSION"].emplace_back(std::move(rule));
+		m_rules["expression"].emplace_back(std::move(rule));
 		rule = { TokenType::IDENTIFIER, TokenType::OPERATOR, TokenType::NUMBER, TokenType::LOGICAL_OPERATOR,TokenType::EXPRESSION };
-		m_rules["EXPRESSION"].emplace_back(std::move(rule));
+		m_rules["expression"].emplace_back(std::move(rule));
 		rule = { TokenType::IDENTIFIER, TokenType::OPERATOR, TokenType::STRING_LITERAL};
-		m_rules["EXPRESSION"].emplace_back(std::move(rule));
+		m_rules["expression"].emplace_back(std::move(rule));
 		rule = { TokenType::IDENTIFIER, TokenType::OPERATOR, TokenType::NUMBER };
-		m_rules["EXPRESSION"].emplace_back(std::move(rule));
+		m_rules["expression"].emplace_back(std::move(rule));
 
 		rule = { TokenType::EXPRESSION, TokenType::LOGICAL_OPERATOR,TokenType::EXPRESSION };
-		m_rules["EXPRESSION"].emplace_back(std::move(rule));
+		m_rules["expression"].emplace_back(std::move(rule));
 
-		//CREATE
-		rule = { TokenType::KEYWORD, TokenType::KEYWORD, TokenType::IDENTIFIER ,TokenType::LEFTPAREN,TokenType::REPEAT, TokenType::IDENTIFIER, TokenType::AND, TokenType::DATATYPE,TokenType::AND,TokenType::NUMBER,TokenType::RIGHTPAREN, TokenType::END };
-		m_rules["CREATE"].emplace_back(std::move(rule));
+		//create
+		rule = { TokenType::KEYWORD, TokenType::KEYWORD, TokenType::IDENTIFIER ,TokenType::LEFTPAREN,TokenType::REPEAT, TokenType::IDENTIFIER, TokenType::AND, TokenType::DATATYPE,TokenType::AND,TokenType::NUMBER,TokenType::AND,TokenType::DELIMITER,TokenType::RIGHTPAREN, TokenType::END };
+		m_rules["create"].emplace_back(std::move(rule));
 
 		rule = { TokenType::LEFTPAREN,TokenType::REPEAT,TokenType::IDENTIFIER, TokenType::AND, TokenType::DELIMITER, TokenType::RIGHTPAREN };
-		m_rules["COLUMNS"].emplace_back(std::move(rule));
+		m_rules["columns"].emplace_back(std::move(rule));
 
 		rule = { TokenType::REPEAT ,TokenType::NUMBER,TokenType::AND, TokenType::DELIMITER,TokenType::OR,TokenType::STRING_LITERAL,TokenType::AND, TokenType::DELIMITER};
-		m_rules["VALUE"].emplace_back(std::move(rule));
+		m_rules["value"].emplace_back(std::move(rule));
 
 
 		rule = { TokenType::REPEAT , TokenType::IDENTIFIER, TokenType::AND, TokenType::DELIMITER };
-		m_rules["IDENTIFIERS"].emplace_back(std::move(rule));
+		m_rules["identifiers"].emplace_back(std::move(rule));
 
 
 		rule = { TokenType::REPEAT, TokenType::EXPRESSION , TokenType::AND, TokenType::DELIMITER };
-		m_rules["ASSIGNS"].emplace_back(std::move(rule));
+		m_rules["assign"].emplace_back(std::move(rule));
 
 	}
 	static void ReportInfo(const std::string& name,const std::string& message)
 	{
-		Util::ErrorManager::Get().set(Util::ErrorLevel::Info, name, message);
+		StaticFunc::WriteInfo(name, message);
 	}
 	// 辅助函数实现
-	void Compiler::toUpper(std::string& str)
+	void Compiler::toLower(std::string& str)
 	{
 		std::transform(str.begin(), str.end(), str.begin(), ::tolower);
 	}
@@ -495,14 +520,20 @@ namespace liao::Compiler
 		if (token.length() < 2) return false;
 		char left = token.front();
 		char right = token.back();
-		return left == right && left == '\'';
+		if (left == right && left == '\'')
+		{
+			token.pop_back();
+			token.erase(0, 1);
+			return true;
+		}
+		return false;
 	}
 
 	TokenType Compiler::getTokenType(std::string& token)
 	{
-		if (token == "AND" || token == "OR")
+		if (token == "and" || token == "or")
 			return TokenType::LOGICAL_OPERATOR;
-		else if (token == "NOT")
+		else if (token == "not")
 			return TokenType::NOT;
 		if (isKeyword(token)) return TokenType::KEYWORD;
 		if (isDataType(token)) return TokenType::DATATYPE;
@@ -597,7 +628,7 @@ namespace liao::Compiler
 				return -1;
 			if (tokens[tokenIter].type != rule[ruleIter])
 			{
-				if (skip|| (rule.size() - ruleIter == 1 && (rule[ruleIter] != TokenType::DELIMITER && rule[ruleIter] != TokenType::END)))
+				if (skip|| rule.size() - ruleIter == 1)
 				{
 					ReportInfo("SyntaxError", std::format("{} is type {} but {} required",
 						tokens[tokenIter].value,
@@ -619,7 +650,7 @@ namespace liao::Compiler
 	{
 		std::deque<Token> tokens;
 		std::string currentToken;
-		std::string internal = ERROR_HEAD;
+		std::string internal = "Error:[ParsingError]";
 		bool inQuotes = false;
 		char quoteChar = '"';
 		size_t position = 0;
@@ -698,7 +729,7 @@ namespace liao::Compiler
 	{
 		if (type == TokenType::EXPRESSION)
 		{
-			return "EXPRESSION";
+			return "expression";
 		}
 		else if (type == TokenType::LEFTPAREN)
 		{
@@ -718,7 +749,7 @@ namespace liao::Compiler
 		}
 		else if (type == TokenType::IDENTIFIERS)
 		{
-			return "IDENTIFIERS";
+			return "identifiers";
 		}
 		else if (type == TokenType::IDENTIFIER_TABLE)
 		{
@@ -734,11 +765,11 @@ namespace liao::Compiler
 		}
 		else if (type == TokenType::COLUMNS)
 		{
-			return "COLUMNS";
+			return "columns";
 		}
 		else if (type == TokenType::NOT)
 		{
-			return "NOT";
+			return "not";
 		}
 		else if (type == TokenType::STRING_LITERAL)
 		{
@@ -746,15 +777,15 @@ namespace liao::Compiler
 		}
 		else if (type == TokenType::VALUE)
 		{
-			return "VALUE";
+			return "value";
 		}
 		else if (type == TokenType::NUMBER)
 		{
-			return "NUMBER";
+			return "number";
 		}
 		else if (type == TokenType::OR)
 		{
-			return "OR";
+			return "or";
 		}
 		else if (type == TokenType::OPERATOR)
 		{
@@ -783,7 +814,7 @@ namespace liao::Compiler
 	}
 	bool Compiler::columnsCheck( std::deque<Token>& tokens, unsigned& start)
 	{
-		auto& rules = m_rules["COLUMNS"];
+		auto& rules = m_rules["columns"];
 		unsigned begin = start;
 		for (auto& rule : rules)
 		{
@@ -800,7 +831,7 @@ namespace liao::Compiler
 	}
 	bool Compiler::identifiersCheck( std::deque<Token>& tokens, unsigned& start)
 	{
-		auto& rules = m_rules["IDENTIFIERS"];
+		auto& rules = m_rules["identifiers"];
 		for (auto& rule : rules)
 		{
 			unsigned begin = start;
@@ -819,7 +850,7 @@ namespace liao::Compiler
 	}
 	bool Compiler::valueCheck( std::deque<Token>& tokens, unsigned& start)
 	{
-		auto& rules = m_rules["VALUE"];
+		auto& rules = m_rules["value"];
 		unsigned begin = start;
 		unsigned typeStart = 0;
 		for (auto& rule : rules)
@@ -938,7 +969,7 @@ namespace liao::Compiler
 	}
 	bool Compiler::expressionCheck( std::deque<Token>& tokens, unsigned& start)
 	{
-		auto& rules = m_rules["EXPRESSION"];
+		auto& rules = m_rules["expression"];
 
 		bool skip = false;
 		for (auto&rule:rules)
@@ -968,7 +999,7 @@ namespace liao::Compiler
 	}
 	Compiler::ExecuteBody Compiler::syntaxFailed(std::string& error, const std::string& message)
 	{
-		error = "[SyntaxError]";
+		error = "Error:[SyntaxError]";
 		error += message;
 		return ExecuteBody(message);
 	}
@@ -1000,7 +1031,7 @@ namespace liao::Compiler
 	{
 		auto task = body.getTask();
 		auto& operations = body.get();
-		std::string internal = "[Error]";
+		std::string internal = "Error:[RuntimeError]";
 		if (task == SQLType::Delete||task == SQLType::Insert||task == SQLType::Update)
 		{
 			try
@@ -1011,7 +1042,8 @@ namespace liao::Compiler
 				bool exit = false;
 				if (ptr == nullptr)
 				{
-					internal += std::format("Table {} do not exists (Runtime Error)", tableName);
+					internal += std::format("Table {} do not exists", tableName);
+					return Record();
 				}
 				else
 				{
@@ -1027,11 +1059,11 @@ namespace liao::Compiler
 						}
 						auto result = ptr->where(where);
 						where.clear();
-						for (auto& record : result)
+						for (int n = 0;n<result.size();++n)
 						{
-							ptr->remove(user->getName(), record);
+							if (result[n])
+								ptr->remove(user->getName(), n);
 						}
-
 					}
 					else if (task == SQLType::Insert)
 					{
@@ -1039,13 +1071,20 @@ namespace liao::Compiler
 						auto& columnList = operations[1];
 						auto& valueList = operations[2];
 						if (columnList.size() != ptr->columnSize() || columnList.size() != valueList.size())
-							internal += std::format("Column number do not match with definition of {} (Runtime Error)", ptr->getName());
+						{
+							internal += std::format("Column number do not match with definition of {}", ptr->getName());
+							error = std::move(internal);
+							return Record();
+						}
+
 						if (std::any_of(columnList.begin(), columnList.end(), [&](Entity& column) {
 							return !ptr->existColumn(column.content);
 						}))
 						{
 							exit = true;
-                            internal += std::format("Column name not found in {} (Runtime Error)", ptr->getName());
+                            internal += std::format("Column name not found in {}", ptr->getName());
+							error = std::move(internal);
+							return Record();
 						};
 						if (!std::ranges::equal(columnList, columnInfo, [&](const Entity& column, const Column& info)
 							{
@@ -1053,7 +1092,9 @@ namespace liao::Compiler
 							}))
 						{
 							exit = true;
-							internal += std::format("Given order of column is incorrect (Runtime Error)");
+							internal += std::format("Given order of column is incorrect");
+							error = std::move(internal);
+							return Record();
 						}
 
 						if (!exit)
@@ -1063,32 +1104,38 @@ namespace liao::Compiler
 							int offset = 0;
 							for (int n = 0; n < columnList.size(); ++n)
 							{
-								if (columnList[n].m_type == DataType::Number)
+								if (valueList[n].m_type == DataType::Number)
 								{
 									if (columnInfo[n].getType() != PrimedDB::DataType::Int)
 									{
-										internal += std::format("Given type not match the defined type with  (Runtime Error)", ptr->getColumns()[n].getName());
+										internal += std::format("Given type not match the defined type with {}", ptr->getColumns()[n].getName());
 										exit = true;
 										break;
 									}
-									unsigned value = std::stoi(columnList[n].content);
+									unsigned value = std::stoi(valueList[n].content);
 									memcpy_s(data.get()+offset, columnInfo[n].size(), &value, columnInfo[n].size());
 								}
-								else if (columnList[n].m_type == DataType::String)
+								else if (valueList[n].m_type == DataType::String)
 								{
 									if (columnInfo[n].getType() != PrimedDB::DataType::Varchar)
 									{
-										internal += std::format("Given type not match the defined type with  (Runtime Error)", ptr->getColumns()[n].getName());
-										exit = true;
-										break;
+										internal += std::format("Given type not match the defined type {}", ptr->getColumns()[n].getName());
+
+										error = std::move(internal);
+										return Record();
 									}
-									memcpy_s(data.get() + offset, columnInfo[n].size(), columnList[n].content.data(), columnInfo[n].size());
+									auto cpySize = valueList[n].content.size() >  columnInfo[n].size() ? columnInfo[n].size() : valueList[n].content.size();
+									memcpy_s(data.get() + offset, columnInfo[n].size(), valueList[n].content.data(), cpySize);
 								}
 								offset += columnInfo[n].size();
 							}
 							if (!exit)
 								ptr->insert(user->getName(), std::move(data));
+							internal = "Insert success";
+							error = std::move(internal);
+							return Record(true);
 						}
+
 					}
 					else
 					{
@@ -1101,14 +1148,20 @@ namespace liao::Compiler
 							values.emplace_back(operations[n][2].content);
 							if (operations[n].empty())
 							{
-								break;
+								internal += "Unexpected compiler error";
+								error = std::move(internal);
+								return Record();
 							}
 						}
 						if (!std::ranges::equal(columns, columnInfo, [&](const std::string& column, const Column& info)
 							{
 								return column == info.getName();
 							}))
-							internal += std::format("Given order of column is incorrect (Runtime Error)");
+						{
+							internal += std::format("Given order of column is incorrect ");
+							error = std::move(internal);
+							return Record();
+						}
 						else
 						{
 							auto iter = std::find_if(columns.begin(), columns.end(), [&](const std::string& column)
@@ -1117,10 +1170,12 @@ namespace liao::Compiler
 								});
 							if (iter != columns.end())
 							{
-								internal += std::format("Given column {} do not exist (Runtime Error)", *iter);
+								internal += std::format("Given column {} do not exist ", *iter);
+								error = std::move(internal);
+								return Record();
 							}
 							if (columns.size() != columnInfo.size())
-								internal += "For current version only fully update will be accepted by PrimedDB Compiler (Runtime Error)";
+								internal += "For current version only fully update will be accepted by PrimedDB Compiler ";
 							else
 							{
 
@@ -1131,23 +1186,26 @@ namespace liao::Compiler
 								auto result = ptr->where(where);
 								UCharPtr data;
 								int sum = 0;
-								for (auto& pos : result)
+								for (int pos; pos < result.size(); ++pos)
 								{
-									data = std::make_unique<char[]>(ptr->byteSize());
-									StaticFunc::clearMemory(data.get(), ptr->byteSize());
-									int sum = 0;
-									for (int n = 0; n < columns.size(); ++n)
+									if (result[pos])
 									{
-										if (columnInfo[n].getType() == DataType::String)
-											memcpy_s(data.get() + sum, columnInfo[n].size(), values[n].c_str(), columnInfo[n].size());
-										else if (columnInfo[n].getType() == DataType::Int)
+										data = std::make_unique<char[]>(ptr->byteSize());
+										StaticFunc::clearMemory(data.get(), ptr->byteSize());
+										int sum = 0;
+										for (int n = 0; n < columns.size(); ++n)
 										{
-											unsigned temp = std::stoi(values[n]);
-											memcpy_s(data.get() + sum, columnInfo[n].size(), &temp, columnInfo[n].size());
+											if (columnInfo[n].getType() == DataType::String)
+												memcpy_s(data.get() + sum, columnInfo[n].size(), values[n].c_str(), columnInfo[n].size());
+											else if (columnInfo[n].getType() == DataType::Int)
+											{
+												unsigned temp = std::stoi(values[n]);
+												memcpy_s(data.get() + sum, columnInfo[n].size(), &temp, columnInfo[n].size());
+											}
+											sum += columnInfo[n].size();
 										}
-										sum += columnInfo[n].size();
+										ptr->update(user->getName(), pos, std::move(data));
 									}
-									ptr->update(user->getName(), pos, std::move(data));
 								}
 							}
 						}
@@ -1158,8 +1216,6 @@ namespace liao::Compiler
 			{
 				Util::ErrorManager::Get().set(Util::ErrorLevel::Error, "Error", e.what(),Infor::ClassInfor(THISFUNC,THISFILE));
 			}
-			
-			error = std::move(internal);
 			return Record();
 		}
 		else if (task == SQLType::Select)
@@ -1169,34 +1225,59 @@ namespace liao::Compiler
 			TablePtr ptr = TableManager::Get().get_noLock(tables[0].content);
 			if (ptr == nullptr)
 			{
-				internal += std::format("Table {} do not exist (Runtime Error)", tables[0].content);
+				internal += std::format("Table {} do not exist", tables[0].content);
                 error = std::move(internal);
 				return Record();
 			}
-			std::unordered_map<std::string, std::string> where;
-			Record record = ptr->select();
-			if (!(columns.size() == 1 && columns[0].m_type == DataType::All))
+			Record record;
+			if (columns.size() == 1 && columns[0].m_type == DataType::All)
 			{
-				for (int n = 2; n < operations.size(); ++n)
+				record = ptr->select();
+				record.all();
+			}
+			else
+			{
+				record = ptr->select();
+				for (auto& column : columns)
 				{
-					where[operations[n][0].content] = operations[n][2].content;
+					record.include(column.content);
 				}
-				record.where(ptr->where(where));
+			}
+			if (operations.size() >= 3)
+			{
+				std::unordered_map<std::string, std::string> where;
+				for (int n = 2;n < operations.size();++n)
+				{
+					if (operations[n].size() !=  3)
+						continue;
+					where[operations[n][0].content] = operations[n][2].content;
+					auto available = std::move(ptr->where(where));
+					record.where(available);
+				}
 			}
 			return record;
 		}
 		else if (task == SQLType::Create)
 		{
 			std::string tableName = std::move(operations[0][0].content);
-			std::set<Column> columns;
+			std::deque<Column> columns;
 			for (int n = 1;n<operations.size();++n)
 			{
-				columns.emplace(operations[n][0].content,
+				auto type = operations[n][1].m_type == DataType::String ? DataType::Varchar : DataType::Int;
+				columns.emplace_back(operations[n][0].content,
 					stoi(operations[n][2].content),
 					tableName,
-					operations[n][1].m_type == DataType::String ? DataType::Varchar : DataType::Int);
+					type);
 			}
-			TableManager::Get().add(*user,tableName, columns);
+			if (TableManager::Get().exist(tableName))
+			{
+				internal = std::format("Table {} exists\n", tableName);
+				return Record(true);
+			}
+			auto ptr = TableManager::Get().add(*user,tableName, columns);
+			internal = std::format("Table {} created\n", ptr->getName());
+			error = std::move(internal);
+			return Record(true);
 		}
 		return Record();
 	}
@@ -1207,29 +1288,39 @@ namespace liao::Compiler
 		constructRules();
 	}
 	// 主编译函数
-	std::future<Result> Compiler::compile(UserPtr user, std::string&& sql)
+	std::future<Result> Compiler::compile(UserPtr user,const std::string& sql)
 	{
-		return std::async(std::launch::async, [user, sql = std::move(sql)]()
+		return std::async(std::launch::async, [user, sql]()
 			{
 				std::string inner = sql;
 				// 验证SQL语句
 				Transection transection;
 				Record record;
-				toUpper(inner);
-				if (inner == "COMMIT"|| inner == "COMMIT;")
+				toLower(inner);
+				if (inner == "commit"|| inner == "commit;")
 				{
 					user->commit();
+					CallInfo("CompilerMessage", "Commit executed");
 					return Result(true, "Commit success", 0);
 				}
 				std::string error;
 				auto tokens = parseSQL(inner, error);
+
 				if (error.empty()) {
+					CallInfo("CompilerMessage", "Parsing Success");
 					auto value = syntaxCheck(user, tokens, error);
 					if (value.isValid())
 					{
+						CallInfo("CompilerMessage", "Syntax check pass");
 						auto result = std::move(execute(user, value, error));
-						if (error.empty())
-							return Result(result.isValid(), result.format(), 0);
+						if (result.isValid())
+						{
+							if (error.empty())
+								return Result(result.isValid(), result.format(), 0);
+							else
+								return Result (result.isValid(), error, 0);
+						}
+
 					}
 				}
 				// 词法分析

@@ -21,15 +21,12 @@ namespace liao::Net
     }
     static void CallInfo(const string& error, const string& message)
     {
-        Util::ErrorManager::Get().set(
-            Util::ErrorLevel::Warning,
-            error, message
-        );
+        StaticFunc::WriteInfo(error, message);
     }
     static void CallWarning(const string& error, const string& message)
     {
         Util::ErrorManager::Get().set(
-            Util::ErrorLevel::Info,
+            Util::ErrorLevel::Warning,
             error, message
         );
     }
@@ -234,7 +231,33 @@ namespace liao::Net
                 handle_read(socket, buffer, error);
             });
     }
-
+    void Server::sendStructure(std::shared_ptr<asio::ip::tcp::socket> socket)
+    {
+        string structure = std::move(TableManager::Get().format());
+        if (structure.empty())
+            structure = "No table exits\n";
+        writeMessage(socket,structure);
+    }
+    void Server::writeMessage(std::shared_ptr<asio::ip::tcp::socket> socket,std::string& message)
+    {
+        int size= message.size();
+        message = to_string(size) + "\n" + message;
+        shared_ptr<string> messageBody = make_shared<string>(std::move(message));
+        if (messageBody->back() != '\n')
+            messageBody->push_back('\n');
+        asio::async_write(*socket, asio::buffer(*messageBody), [messageBody, socket,size](const std::error_code& error, size_t /*bytes_transferred*/)
+            {
+                if (error)
+                {
+                    CallError("ReturnError", "An Error happened when trying to get the table structures", Infor::ClassInfor(THISFUNC, THISFILE));
+                }
+                else
+                {
+                    CallInfo("Return", std::format("Total message bytes :", size));
+                    CallInfo("Return", std::format("InformationBody : \n[\n{}]", *messageBody));
+                }
+            });
+    }
     void Server::handle_read(std::shared_ptr<asio::ip::tcp::socket> socket,
         std::shared_ptr<asio::streambuf> buffer,
         const std::error_code& error)
@@ -242,22 +265,14 @@ namespace liao::Net
         if (!error && !m_stop) {
             string message;
             stream2string(buffer, message);
-
+            CallInfo("MessageReceived", message);
             if (message[0] != '/')
             {
                 auto result = Compiler::Compiler::Get().compile(getUser(socket), std::move(message));
                 message.clear();
                 auto text = result.get();
-                text.m_message += FINISH;
-                asio::async_write(*socket, asio::buffer(text.m_message), [text](const std::error_code& error, size_t /*bytes_transferred*/)
-                    {
-                        if (error)
-                        {
-                            CallError("ReturnError", "An error happened when transmit the SQL result back to client", Infor::ClassInfor(THISFUNC, THISFILE));
-                        }
-                        else
-                            CallInfo("ReturnSuccess", text.m_message);
-                    });
+
+                writeMessage(socket, text.m_message);
             }
             else
             {
@@ -268,20 +283,7 @@ namespace liao::Net
                 }
                 if (message == "/structure")
                 {
-                    string structure = std::move(TableManager::Get().format());
-                    structure = to_string(structure.size())+"\n"+ structure;
-                    shared_ptr<string> structurePtr = make_shared<string>(std::move(structure));
-                    asio::async_write(*socket, asio::buffer(*structurePtr), [structurePtr](const std::error_code& error, size_t /*bytes_transferred*/)
-                        {
-                            if (error)
-                            {
-                                CallError("ReturnError", "An Error happened when trying to get the table structures", Infor::ClassInfor(THISFUNC, THISFILE));
-                            }
-                            else
-                            {
-                                CallInfo("ReturnSuccess",format("\n[\n{}]", *structurePtr));
-                            }
-                        });
+                    sendStructure(socket);
                 }
             }
             doRead(socket);

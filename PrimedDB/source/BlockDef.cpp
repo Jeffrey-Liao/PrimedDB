@@ -23,12 +23,12 @@ namespace liao::PrimedDB
 		m_memory = nullptr;
 	}
 	Block::Block()
-		:m_size(0),m_id(StaticFunc::GetUniqueId(Setting::Get().getUserIDHashType()))
+		:m_count(-1),m_id(StaticFunc::GetUniqueId(Setting::Get().getUserIDHashType()))
 	{
 		allocate();
 	}
 	Block::Block(Block&& move) noexcept
-		:m_memory(move.m_memory),m_size(move.m_size),m_id(std::move(move.m_id)),m_owner(std::move(move.m_owner)),m_records(std::move(move.m_records))
+		:m_memory(move.m_memory), m_count(-1),m_id(std::move(move.m_id)),m_owner(std::move(move.m_owner)),m_records(std::move(move.m_records))
 	{
 		move.m_memory = nullptr;
 		move.m_id = StaticFunc::GetUniqueId(Setting::Get().getUserIDHashType());
@@ -40,10 +40,16 @@ namespace liao::PrimedDB
 			WriteLock lock(m_mutex);
 			m_owner = owner;
 			m_start = pos;
-			m_size = 0;
+			m_count = -1;
 			m_records.clear();
 			m_records.reserve(value);
+			memset(m_memory, 0, Setting::Get().getBlockSize());
+			build();
 		}
+		int size = this->size();
+		WriteLock lock(m_mutex);
+		m_pointer = size;
+
 	}
 	//check two Blocks are same object or not
 	bool Block::same(const Block& object) const
@@ -52,10 +58,10 @@ namespace liao::PrimedDB
 		return m_id == object.m_id;
 	}
 	//compare content in memory
-	bool Block::equal(const Block& object) const
+	bool Block::equal(const Block& object)
 	{
 		ReadLock lock(m_mutex);
-		int cmpSize = min(m_size, object.m_size);
+		int cmpSize = min(size(), static_cast<unsigned>(object.m_count));
 		return std::memcmp(m_memory, object.m_memory, cmpSize)==0;
 	}
 	unsigned Block::max() const
@@ -73,14 +79,17 @@ namespace liao::PrimedDB
 	{
 		if (!empty())
 		{
-			fstream file; {
+			 {
 				WriteLock lock(m_mutex);
+				fstream file;
 				auto dir = Setting::Get().getDataDirectory() / (m_owner->getName() + ".dat");
 				file.open(dir, ios::out | ios::binary);
 				file.seekg(m_start*m_owner->totalByte());
-				file.write(m_memory, m_size * m_owner->totalByte());
+				int size = m_records.size() * m_owner->totalByte();
+				file.write(m_memory, size);
+				file.close();
 			}
-			file.close();
+			
 		}
 	}
 	void Block::update(unsigned location, std::shared_ptr<char[]> memory)
@@ -97,20 +106,30 @@ namespace liao::PrimedDB
 		m_owner = std::move(move.m_owner);
 		m_id = std::move(move.m_id);
         m_memory = move.m_memory;
-        m_size = move.m_size;
         move.m_memory = nullptr;
         move.m_id = StaticFunc::GetUniqueId(Setting::Get().getUserIDHashType());
 		return *this;
 	}
-	bool Block::empty() const
+	bool Block::empty()
 	{
 		ReadLock lock(m_mutex);
-		return m_size = 0;
+		return size() < 0;
 	}
-	unsigned int Block::size() const
+	unsigned int Block::size()
 	{
 		ReadLock lock(m_mutex);
-		return m_size;
+		if (m_count == -1)
+		{
+			auto end = max() + m_start;
+			auto& available = m_owner->getAvailable();
+			m_count = 0;
+			for (int n = m_start;n< available.size()&&n < end;++n)
+			{
+				if (available[n])
+					m_count++;
+			}
+		}
+		return m_count;
 	}
 	char* Block::reference()
 	{
@@ -124,13 +143,14 @@ namespace liao::PrimedDB
 	}
 	void Block::build()
 	{
-		if (m_records.empty())
+		if (m_records.empty()&&m_owner != nullptr)
 		{
 			auto max = Setting::Get().getBlockSize();
-			for (int n = 0;n< max;n+=m_owner->totalByte())
+			for (int n = 0;n < max;n+=m_owner->totalByte())
 			{
 				m_records.emplace_back(m_memory + n);
 			}
+			m_pointer = m_owner->getAvailable().size();
 		}
 	}
 	TablePtr Block::getOwner()
@@ -138,11 +158,11 @@ namespace liao::PrimedDB
 		ReadLock lock(m_mutex);
         return m_owner;
 	}
-	void Block::remove(unsigned index) const
+	void Block::remove(unsigned index)
 	{
 		WriteLock lock(m_mutex);
 		m_owner->setUnavailable(m_start + index);
-		--m_size;
+		m_count = -1;
 	}
 	std::pair<unsigned, std::shared_ptr<char[]>> Block::insert(std::shared_ptr<char[]> memory, unsigned number)
 	{
@@ -151,11 +171,12 @@ namespace liao::PrimedDB
 		}
 
 		unsigned l_byte = byte();
-		unsigned capacity = Setting::Get().getBlockNumber() / l_byte;
-		unsigned left = capacity - m_size < 0 ? 0: capacity - m_size;
+		unsigned capacity = Setting::Get().getBlockSize() / l_byte;
+		unsigned left = capacity - size() < 0 ? 0: capacity - size();
 
 		// 边界检查防止越界写入
-		if (number < 0 || m_size > capacity) {
+		if (number < 0 || size() > capacity) {
+			ErrorManager::Get().set(ErrorLevel::Error, "BlockInsert", std::format("Write Out bound where size is:{}", size()));
 			return { static_cast<unsigned>(number), std::move(memory) };
 		}
 
@@ -171,12 +192,7 @@ namespace liao::PrimedDB
 			size_t size = std::min(number, left);
 			size_t copy_bytes = static_cast<size_t>(l_byte) * size;
 			if (mem != nullptr)
-				memcpy_s(m_memory + m_size * l_byte, copy_bytes, mem, copy_bytes);
-			for (int n =0;n< size;++n)
-			{
-				m_records.emplace_back(m_memory + m_size * l_byte + n);
-			}
-			m_size += size;
+				memcpy_s(m_memory + m_pointer * l_byte, copy_bytes, mem, copy_bytes);
 
 			// 如果有 overflow 数据需要保留，将其前移到 memory 开头
 			if (overflow > 0 && overflow <= static_cast<unsigned>(number)) {
@@ -184,9 +200,12 @@ namespace liao::PrimedDB
 				size_t move_bytes = static_cast<size_t>(l_byte) * overflow;
 				memmove(mem, mem + move_offset, move_bytes);  // 安全地重叠区域移动
 			}
+			StaticFunc::WriteInfo("BlockInsert", std::format("Write all data into block memory position {} success", m_pointer));
 		}
-
-		flush();
+		m_pointer += number;
+		m_count = -1;
+		StaticFunc::WriteInfo("BlockInsert", std::format("The occupied size of block is: {}", size()));
+		this->flush();
 		return std::make_pair(overflow, std::move(memory));
 	}
 	
@@ -200,10 +219,10 @@ namespace liao::PrimedDB
 		m_owner->dropBlock(index);
 		m_owner = nullptr;
 	}
-	double Block::percentage() const
+	double Block::percentage()
 	{
 		ReadLock lock(m_mutex);
-		return m_size / max();
+		return size() / max();
 	}
 	ShareMutex& Block::getMutex()
 	{

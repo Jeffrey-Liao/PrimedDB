@@ -38,7 +38,7 @@ namespace liao::Math
 
         if (digits != 0)
         {
-            mpz_ui_pow_ui(enlarge.get_mpz_t(), 2, digits);// 2^(target_bits-1)
+            mpz_ui_pow_ui(enlarge.get_mpz_t(), 2, digits);// 2^(target_bits)
         }
         number *= enlarge;
         if (mpz_even_p(number.get_mpz_t())) {

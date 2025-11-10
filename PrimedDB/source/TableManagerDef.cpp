@@ -1,10 +1,11 @@
+#include "BlockManager.h"
 #include "Log.h"
 #include "Setting.h"
 #include "TableManager.h"
 USESTD;
 namespace liao::PrimedDB
 {
-	int TableManager::selectFromTables(std::string target, std::unordered_map <string, TablePtr>& applicant)
+	int TableManager::selectFromTables(std::string target, const std::unordered_map <string,TablePtr>& applicant)
 	{
 		if (!applicant.contains(target))
 			return -1;
@@ -17,43 +18,56 @@ namespace liao::PrimedDB
 	}
 	void TableManager::constructFromDataDefFile()
 	{
-		m_tableFile.open(Util::Setting::Get().getTableFile(), ios::in | ios::out | ios::app);
+		WriteLock lock(TableFileMutex);
+		std::fstream m_tableFile(Util::Setting::Get().getTableFile(), ios::in | ios::out | ios::app);
 		vector<string> labels;
 		labels.reserve(10);
 		if (!m_tableFile.fail())
 		{
+			StaticFunc::WriteInfo("TableManager", std::format("Initializing TableManager from definition file"));
 			string buffer;
 			while (!m_tableFile.eof())
 			{
 				getline(m_tableFile, buffer);
 				if (!buffer.empty())
 				{
+					WriteLock lock(m_listMutex);
 					m_tables.push_back(std::make_shared<Table>(buffer, labels));
 					m_tables.back()->read();
 					m_nameIndex[m_tables.back()->getName()] = m_tables.back();
+					StaticFunc::WriteInfo("TableManager", std::format("Table {} Loaded", m_tables.back()->getName()));
 				}
-
 			}
 			m_tableFile.clear();
 		}
+		m_tableFile.close();
+		StaticFunc::WriteInfo("TableManager", std::format("Initialization complete"));
 	}
 	TableManager::TableManager()
 	{
 		constructFromDataDefFile();
+		m_isBlockTerminate = BlockManager::Get().wait();
 	}
 
-	TablePtr TableManager::add(User& operater, std::string& name, set<Column>& columns, UserLevel level)
+	TablePtr TableManager::add(User& operater, std::string& name, deque<Column>& columns, UserLevel level)
 	{
-		if (m_nameIndex.contains(name))
-			return m_nameIndex[name];
+		{
+			ReadLock lock(m_listMutex);
+			if (m_nameIndex.contains(name))
+				return m_nameIndex.at(name);
+		}
 		UserLevel userLevel = operater.getLevel();
 		if (level != UserLevel::None && level < userLevel)
 			userLevel = level;
 		auto ptr = std::make_shared<Table>(operater.getId(), name, userLevel, columns);
-		WriteLock lock(m_listMutex);
-		m_tables.push_back(ptr);
-		m_nameIndex[ptr->getName()] = m_tables.back();
-		m_tableFile<< ptr->toString() << std::endl;
+		{
+			WriteLock lock(m_listMutex);
+			m_tables.push_back(ptr);
+			m_nameIndex[ptr->getName()] = m_tables.back();
+			m_tables.back()->read();
+		}
+		update();
+		StaticFunc::WriteInfo("TableManager", std::format("New table {} created successfully by User {}", m_tables.back()->getName(), operater.getName()));
 		return m_tables.back();
 	}
 	bool TableManager::exist(const std::string& name)const
@@ -70,11 +84,26 @@ namespace liao::PrimedDB
 		}
 		return false;
 	}
+	void TableManager::update()
+	{
+		WriteLock fileLock(TableFileMutex);
+		if (m_tables.empty())
+			return;
+		fstream m_tableFile(Util::Setting::Get().getTableFile(), ios::out);
+		StaticFunc::WriteInfo("TableManger", "Updating schema file");
+		ReadLock lock(m_listMutex);
+		for (auto& p : m_tables)
+		{
+			m_tableFile<<p->toString()<<std::endl;
+		}
+		m_tableFile.close();
+		StaticFunc::WriteInfo("TableManger", "Updating complete");
+	}
 	bool TableManager::drop(User& operater, const std::string& name)
 	{
 		bool success;
 		{
-			ReadLock lock(m_listMutex);
+			WriteLock lock(m_listMutex);
 			success = m_nameIndex.contains(name) && m_nameIndex[name].use_count() == 2;
 		}
 		if (!success)
@@ -104,8 +133,9 @@ namespace liao::PrimedDB
 	}
 	TablePtr TableManager::get_noLock(const std::string& name)
 	{
+		ReadLock lock(m_listMutex);
 		if (m_nameIndex.contains(name))
-			return m_nameIndex[name];
+			return m_nameIndex.at(name);
 		else
 			return nullptr;
 	}
@@ -134,6 +164,7 @@ namespace liao::PrimedDB
 	}
 	void TableManager::clear()
 	{
+		WriteLock lock(m_listMutex);
 		m_nameIndex.clear();
 		m_tables.clear();
 	}
@@ -157,6 +188,9 @@ namespace liao::PrimedDB
 	}
 	TableManager::~TableManager()
 	{
-		m_tableFile.close();
+		update();
+		TableDead = true;
+		if (BlockDead)
+			clear();
 	}
 }

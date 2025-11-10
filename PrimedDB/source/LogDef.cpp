@@ -208,7 +208,7 @@ namespace liao::Infor
 	}
 	string Log::LogFilePath = "log";
 	Log::LogStream::LogStream(LogType type)
-		:TYPE(type), m_cache(format("{} - [{}]:",GetTime(), getLabel(type)))
+		:TYPE(type), m_cache(format("{} - [{}]:  ",GetTime(), getLabel(type)))
 	{}
 	Log::LogStream::LogStream(Log::LogStream && mObject) noexcept
 		: TYPE(mObject.TYPE), m_cache(std::move(mObject.m_cache)),m_logFile(std::move(mObject.m_logFile)),m_split(mObject.m_split)

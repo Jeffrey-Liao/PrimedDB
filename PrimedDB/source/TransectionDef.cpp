@@ -91,7 +91,7 @@ namespace liao::PrimedDB
 	}
 	std::string Transection::toString() const
 	{
-		if (m_valid)
+		if (!m_valid)
 			return std::format("{}:{}:{}:{}:{}:{}:{}"
 			,m_id,m_operator,static_cast<int>(m_operation),m_blockId,m_location,m_size,m_memory.get());
 		return "";
@@ -134,7 +134,7 @@ namespace liao::PrimedDB
 	}
 	Transection::~Transection()
 	{
-		if (!m_valid&&m_memory!= nullptr)
+		if (!m_valid&&m_memory != nullptr)
 		{
 			auto dir = Util::Setting::Get().getDataDirectory() / (m_table + ".trs");
 			std::fstream transections(dir, std::ios::out| std::ios::app);

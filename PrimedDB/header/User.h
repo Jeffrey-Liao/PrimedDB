@@ -36,7 +36,7 @@ namespace liao::PrimedDB {
 		TablePtr getTable(const std::string& name)const;
 		unsigned tableCount() const;
 		static std::string PassWordHash(const std::string& rawText);
-		TablePtr createTable(std::string name,UserLevel permission, std::set<Column>&);
+		TablePtr createTable(std::string name,UserLevel permission, std::deque<Column>&);
         void dropTable(const std::string& name);
 		void renameTable(const std::string& name, std::string& newName);
 		void addTable(TablePtr table);

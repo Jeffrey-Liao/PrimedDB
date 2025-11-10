@@ -7,6 +7,10 @@
 //.def file for structure definition. .inf file for informations. .dat file for data.
 namespace liao
 {
+	static std::atomic<bool> BlockDead = false;
+	static std::atomic<bool> UserDead = false;
+	static std::atomic<bool> TableDead = false;
+	static ShareMutex TableFileMutex;
 #define COLUMN_NAME_LEN 50
 #define TABLE_NAME_LEN 50
 #define USER_NAME_LEN 50
@@ -57,6 +61,7 @@ namespace liao
 		static unsigned ByteConvert(unsigned byte);
 		static std::string vectorToString(const std::deque<std::shared_ptr<std::string>>& vec,const std::vector<bool>&);
 		static unsigned MaxSizeForBlock(unsigned byteSize);
+		static void WriteInfo(const std::string& title, const std::string& message);
 		DYNAMICCON(std::integral)
 		static long long VectorSum(std::vector<T>& vec,size_t size = vec.size())
 		{

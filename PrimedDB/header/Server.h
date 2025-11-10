@@ -38,7 +38,8 @@ namespace liao::Net
         void stream2string(std::shared_ptr<asio::streambuf> buffer, std::string& message);
         void exitAct(SocketPtr);
         void authenticate(const std::string& id);
-
+        void sendStructure(std::shared_ptr<asio::ip::tcp::socket> socket);
+        void writeMessage(std::shared_ptr<asio::ip::tcp::socket> socket,std::string& message);
     public:
         Server(asio::io_context& io,const std::string& ip, unsigned short port);
         ~Server();

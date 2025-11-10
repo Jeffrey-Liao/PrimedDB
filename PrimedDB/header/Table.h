@@ -10,7 +10,7 @@
 namespace liao::PrimedDB
 {
 
-	class Table : std::enable_shared_from_this<Table>
+	class Table : public std::enable_shared_from_this<Table>
 	{
 		std::string m_name;
 		std::vector<bool> m_available;
@@ -29,7 +29,7 @@ namespace liao::PrimedDB
 
 		void construct(std::vector<std::string>&, const std::string& fileLine);
 		std::pair<int, int> convertBlockPos(unsigned position);
-		void intoString(int& index,std::deque<std::shared_ptr<std::string>>&, std::vector<char*>&,bool);
+		void intoString(int index, std::deque<std::deque<std::shared_ptr<std::string>>>&, std::vector<char*>&,bool);
 
 	public:
 		Table(const Table&) = delete;
@@ -38,7 +38,7 @@ namespace liao::PrimedDB
 		Table(const std::string& fileLine, std::vector<std::string>&);
 		Table& operator=(Table&&) noexcept;
 		Table(Table&&) noexcept;
-		Table(std::string ownerId,std::string& name, UserLevel permission, std::set<Column>&);
+		Table(std::string ownerId,std::string& name, UserLevel permission, std::deque<Column>&);
 		//get_noLock name of the table
 		const std::string& getName() const;
 		//convert a record memory into primed format
@@ -86,12 +86,13 @@ namespace liao::PrimedDB
 		void addBlock(unsigned pos);
 		void dropBlock(unsigned pos);
 		void dropBlockAt(unsigned pos);
-		std::vector<unsigned> where(std::unordered_map<std::string,std::string>&);
+		std::vector<bool> where(std::unordered_map<std::string,std::string>&);
 		std::vector<Column>& getColumns();
 		std::string format();
 		void setSize(unsigned newSize);
 		void setOwner(const std::string& );
 		Record select(bool raw = false);
+		Record select(std::deque<std::string>& list);
 		ShareMutex& getMutex();
 		unsigned blockSize()const;
 		~Table();

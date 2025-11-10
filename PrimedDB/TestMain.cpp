@@ -37,42 +37,54 @@
 #include <chrono>
 USESTD;
 USELIAO;
-int main()
+void serverStart()
 {
-	//asio::io_context io_context;
-	//Net::Server server(io_context,"localhost",313);
- //   string input;
-	//server.start();
- //   std::thread io_thread([&io_context]()
- //       {
- //           asio::executor_work_guard<asio::io_context::executor_type> work_guard =
- //               asio::make_work_guard(io_context);
- //           io_context.run();
- //       });
- //   while (std::getline(std::cin, input)) {
- //       if (input == "exit") {
- //           io_context.stop();
- //           break;
- //       }
- //   }
- //   io_thread.join();
-	string tableName = "test";
-	set<PrimedDB::Column> columns;
-	//string columnName = "name";
-	//columns.emplace(columnName, 12, tableName, PrimedDB::DataType::Varchar);
-	//columnName = "age";
- //   columns.emplace(columnName, 4, tableName, PrimedDB::DataType::Int);
-	//columnName = "sex";
-	//columns.emplace(columnName, 4, tableName, PrimedDB::DataType::Int);
+	asio::io_context io_context;
+	Net::Server server(io_context, "localhost", 313);
+	string input;
+	server.start();
+	std::thread io_thread([&io_context]()
+		{
+			asio::executor_work_guard<asio::io_context::executor_type> work_guard =
+				asio::make_work_guard(io_context);
+			io_context.run();
+		});
+	while (std::getline(std::cin, input)) {
+		if (input == "exit") {
+			io_context.stop();
+			break;
+		}
+	}
+	io_thread.join();
+}
+void sqlTest()
+{
 	auto system = PrimedDB::UserManager::Get().get("system");
 
 	if (system != nullptr)
 	{
-		string sql = "select * from test";
-		auto result = Compiler::Compiler::Get().compile(system, std::move(sql));
-		auto reply = result.get();
-		cout << reply.m_success;
+		string sql = "select * from JEFF where id = 123";
+		sql = "CREATE TABLE JEFF (id INT 4, name VARCHAR 10, gender INT 4)";
+		future<Compiler::Result> result;
+		Compiler::Result reply;
 		
+		auto& tableM = PrimedDB::TableManager::Get();
+		for (int n = 0;n<100;++n)
+		{
+			sql = format("INSERT INTO LIAO (id, name, gender) VALUES ({},'Hello', 1)", 99);
+			result = Compiler::Compiler::Get().compile(system, sql);
+			reply = result.get();
+		}
+		system->commit();
+		sql = "select * from LIAO";
+		result = Compiler::Compiler::Get().compile(system, std::move(sql));
+		reply = result.get();
+		cout << reply.m_message;
+		this_thread::sleep_for(chrono::seconds(3));
 	}
-
+}
+int main()
+{
+	//serverStart();
+	sqlTest();
 }

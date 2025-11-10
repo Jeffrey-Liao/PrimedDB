@@ -160,7 +160,7 @@ namespace liao::Compiler
 		static PrimedDB::Record execute(PrimedDB::UserPtr, ExecuteBody&, std::string&);
 
 
-		static void toUpper(std::string& str);
+		static void toLower(std::string& str);
 		static std::string trim(const std::string& str);
 
 		static std::unordered_map<std::string, std::vector<std::vector<TokenType>>> m_rules;
@@ -169,7 +169,7 @@ namespace liao::Compiler
 	public:
 
 		// 主编译函数 - 输入SQL语句，输出Transection
-		std::future<Result> compile(PrimedDB::UserPtr user, std::string&& sql);
+		std::future<Result> compile(PrimedDB::UserPtr user, const std::string& sql);
 
 	};
 }

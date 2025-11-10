@@ -45,7 +45,9 @@ namespace liao::PrimedDB
 		{
 			WriteLock lock(m_mutex);
 			pos = m_active.front();
-			m_blocks[pos].getOwner()->dropBlock(pos);
+			auto owner = m_blocks[pos].getOwner();
+			if (owner)
+				owner->dropBlock(pos);
 			m_active.pop_front();
 			m_active.push_back(pos);
 		}
@@ -57,14 +59,46 @@ namespace liao::PrimedDB
 		if (pos == -1)
 		{
 			table->addBlock(newBlock);
-			m_blocks[newBlock].assign(table, table->size());
+			m_blocks[newBlock].assign(table, table->getOwned().size()*table->totalByte());
+
 		}
 		else
 		{
-			table->getOwned()[pos] = newBlock;
+			table->getOwned()[pos/StaticFunc::MaxSizeForBlock(table->totalByte())] = newBlock;
 			m_blocks[newBlock].assign(table, pos);
 		}
+		StaticFunc::WriteInfo("BlockManager",
+			std::format("Allocate block id:{} to table:{} success",
+				std::to_string(newBlock), table->getName()));
 		return newBlock;
+	}
+	unsigned BlockManager::allocateWithOutRead(TablePtr table, int pos)
+	{
+		auto newBlock = allocate();
+
+		if (pos == -1)
+		{
+			m_blocks[newBlock].assign(table, table->getOwned().size()* Util::Setting::Get().getBlockSize());
+			table->getOwned().emplace_back(newBlock);
+		}
+		else
+		{
+			m_blocks[newBlock].assign(table, pos);
+			table->getOwned()[pos / StaticFunc::MaxSizeForBlock(table->totalByte())] = newBlock;
+		}
+		StaticFunc::WriteInfo("BlockManager",
+			std::format("Allocate block id:{} to table:{} success",
+				std::to_string(newBlock), table->getName()));
+		return newBlock;
+	}
+	void BlockManager::promote(unsigned pos)
+	{
+		auto iter = std::ranges::find(m_active.begin(), m_active.end(), pos);
+		if (iter != m_active.end())
+		{
+			m_active.erase(iter);
+			m_active.push_back(pos);
+		}
 	}
 	void BlockManager::handle(Transection& transection)
 	{
@@ -72,29 +106,24 @@ namespace liao::PrimedDB
 		{
 			transection.setInvalid();
 			auto memory = transection.getMemory();
-			unsigned position = transection.getBlockId();
+			int position = transection.getBlockId();
 			auto table = TableManager::Get().get_noLock(transection.getTable());
 			unsigned location = transection.getLocation();
 			if (transection.getType() == SQLType::Insert)
 			{
-				std::pair<unsigned, std::shared_ptr<char[]>> result = std::make_pair(transection.size(), memory);
-				do
+				std::pair<unsigned, std::shared_ptr<char[]>> result = std::make_pair(transection.size(), std::move(memory));
+				if (position == -1)
 				{
-					if (position == -1)
+					position = allocate();
+					transection.setBlockId(position);
 					{
-						position = allocate();
-						transection.setBlockId(position);
-						{
-							m_blocks[position].getMutex().unlock();
-							m_blocks[position].assign(table, table->size());
-						}
-						table->addBlock(position);
+						m_blocks[position].assign(table, table->size());
 					}
-					result = m_blocks[position].insert(result.second, result.first);
-					position = result.first == 0 ? 0 : -1;
+					table->addBlock(position);
 				}
-				while (result.first > 0);
+				result = m_blocks[position].insert(result.second, result.first);
 				table->incrementSize();
+				TableManager::Get().update();
 			}
 			else if (transection.getType() == SQLType::Update)
 			{
@@ -105,7 +134,7 @@ namespace liao::PrimedDB
 				}
 				m_blocks[position].update(location, memory);
 			}
-			else if (transection.getType() == SQLType::Update)
+			else if (transection.getType() == SQLType::Delete)
 			{
 				if (position == -1)
 				{
@@ -118,6 +147,7 @@ namespace liao::PrimedDB
 				{
 					rearrange(table->getOwned(), table->getAvailable());
 				}
+				TableManager::Get().update();
 			}
 
 		}
@@ -132,7 +162,7 @@ namespace liao::PrimedDB
 		WriteLock lock(m_mutex);
 		m_pendingOperations.emplace_back(std::move(transection));
 		m_notify = true;
-		m_cv.notify_one();
+		m_cv.notify_all();
 	}
 	void BlockManager::rearrange(std::deque<int>& owned, std::vector<bool>& available)
 	{
@@ -164,7 +194,7 @@ namespace liao::PrimedDB
 	}
 	void BlockManager::drop(unsigned pos)
 	{
-		if (m_active.empty())
+		if (!m_active.empty())
 		{
 			WriteLock lock(m_mutex);
 			m_active.erase(std::find(m_active.begin(), m_active.end(), pos));
@@ -183,14 +213,18 @@ namespace liao::PrimedDB
 	{
 		return m_mutex;
 	}
+	std::future<bool> BlockManager::wait()
+	{
+		return m_finished.get_future();
+	}
 	BlockManager::~BlockManager()
 	{
-
 		m_end = true;
 		m_notify = true;
+		m_cv.notify_all();
 		if (m_terminate.valid())
 			m_terminate.get();
 		m_blocks.clear();
-		TableManager::Get().clear();
+		m_finished.set_value(true);
 	}
 }

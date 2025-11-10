@@ -1,6 +1,8 @@
 #include "Global.h"
 #include <sstream>
 #include <random>
+
+#include "Log.h"
 #include "Setting.h"
 USESTD;
 USECRPT;
@@ -43,17 +45,15 @@ namespace liao {
 	void StaticFunc::StringToVectorBool(std::vector<bool>& result, const std::string& data)
 	{
 		result.clear();
-		result.reserve(data.size());  // 预分配空间
+		result.resize(data.size());  // 预分配空间
 		for (int n = 0;n<data.size();++n)
 		{
-			result[n] = data[n];
+			result[n] = (data[n] == '1');
 		}
 	}
 	unsigned StaticFunc::ByteConvert(unsigned byte)
 	{
-		int divide = byte / 4;
-		divide += byte % 4 == 0? 0: 1;
-		return divide * 8;
+		return byte*2;
 	}
 	bool StaticFunc::ValidName(std::string& name)
 	{
@@ -85,7 +85,7 @@ namespace liao {
 		string result;
 		for (int n = 0;n<vec.size();++n)
 		{
-			if (!mask[n])
+			if (mask[n])
 			{
 				if (vec[n]->empty())
 					result += "null:";
@@ -97,6 +97,10 @@ namespace liao {
 		if (!result.empty())
 			result.pop_back();
 		return result;
+	}
+	void StaticFunc::WriteInfo(const std::string& title, const std::string& message)
+	{
+		Infor::Log::Get()[Infor::LogType::Info]<<title+":  "<<message<< Infor::Log::LogEndl;
 	}
 	unsigned StaticFunc::MaxSizeForBlock(unsigned byteSize)
 	{

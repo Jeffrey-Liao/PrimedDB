@@ -141,7 +141,7 @@ namespace liao::PrimedDB
 	//1 GREATER, 0 EQUAL, -1 LESS
 	
 
-	TablePtr User::createTable(std::string name, UserLevel permission, set<Column>& columns)
+	TablePtr User::createTable(std::string name, UserLevel permission, deque<Column>& columns)
 	{
 		bool contains;
 		{

@@ -26,20 +26,25 @@ namespace liao::PrimedDB
 		mutable ShareMutex m_mutex;
 		mutable Mutex m_cvMutex;
 
+		std::promise<bool> m_finished;
 		BlockManager();
 
 		unsigned allocate();
 		void manager();
 		void rearrange(std::deque<int>&, std::vector<bool>&);
 		void handle(Transection&);
+		void promote(unsigned pos);
 	public:
 		static unsigned totalRecord(unsigned bytes);
 		void operate(Transection&);
 		//table pointer and line number indicate the start of the block
 		unsigned allocate(TablePtr, int pos = -1);
+		unsigned allocateWithOutRead(TablePtr, int pos = -1);
 		void drop(unsigned pos);
 		Block& get_noLock(unsigned);
 		ShareMutex& getMutex();
+
+		std::future<bool> wait();
 		
 		~BlockManager();
 	};

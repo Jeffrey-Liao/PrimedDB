@@ -11,9 +11,10 @@ namespace liao::PrimedDB
 		//memory
 		char* m_memory = nullptr;
 		//size of how many record in memory
-		mutable unsigned int m_size;
 		//the position of the first record in table
 		unsigned m_start;
+		int m_count;
+		unsigned m_pointer = 0;
 		mutable ShareMutex m_mutex;
 		std::vector<char*> m_records;
 		void allocate(std::shared_ptr<char> source = nullptr, unsigned size = 0);
@@ -26,24 +27,24 @@ namespace liao::PrimedDB
 		//check two Blocks are same object or not
 		bool same(const Block&) const;
 		//compare content in memory
-		bool equal(const Block&) const;
+		bool equal(const Block&);
 		unsigned max() const;
 		void writeLine(UCharPtr, unsigned pos);
 		void flush();
 		void update(unsigned location,std::shared_ptr<char[]> memory);
-		bool empty() const;
-		unsigned int size() const;
+		bool empty();
+		unsigned int size();
 		unsigned byte() const;
 		TablePtr getOwner();
 		//build the link of records
 		void build();
 		//get the memory space of entire block
 		char* reference();
-		void remove(unsigned index) const;
+		void remove(unsigned index);
 		std::pair<unsigned, std::shared_ptr<char[]>> insert(std::shared_ptr<char[]> memory,unsigned number);
 		char* get_noLock(unsigned index);
 		void drop(unsigned index);
-		double percentage() const;
+		double percentage();
 		ShareMutex& getMutex();
 		std::vector<char*>& getRecords();
 		//==same
