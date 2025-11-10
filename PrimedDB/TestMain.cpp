@@ -35,6 +35,7 @@
 #include "TableManager.h"
 #include "UserManager.h"
 #include <chrono>
+#include <iostream>
 USESTD;
 USELIAO;
 void serverStart()
@@ -85,6 +86,6 @@ void sqlTest()
 }
 int main()
 {
-	//serverStart();
-	sqlTest();
+	serverStart();
+	//sqlTest();
 }

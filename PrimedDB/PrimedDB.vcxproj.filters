@@ -263,5 +263,8 @@
     <ClInclude Include="header\TokenList.h">
       <Filter>Compiler\header</Filter>
     </ClInclude>
+    <ClInclude Include="header\ServerCommand.h">
+      <Filter>Net\header</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

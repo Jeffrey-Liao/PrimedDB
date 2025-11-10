@@ -72,6 +72,7 @@ namespace liao::Net
 
         //Stop a client(Executor, User)
         bool stop(const UserPtr&, const UserPtr&);
+        int size();
 
 
     };

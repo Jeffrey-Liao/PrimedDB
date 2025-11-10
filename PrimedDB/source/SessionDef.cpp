@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "Session.h"
 USESTD;
 namespace liao::PrimedDB

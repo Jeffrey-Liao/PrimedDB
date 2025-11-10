@@ -398,4 +398,9 @@ namespace liao::Net
         }
         return success;
     }
+    int Server::size()
+    {
+        Lock lock(m_mutex);
+        return m_user_clients.size();
+    }
 }

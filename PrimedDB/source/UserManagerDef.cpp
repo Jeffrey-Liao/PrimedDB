@@ -46,6 +46,7 @@ namespace liao::PrimedDB
 				m_allUsers[name] = ptr;
 			}
 		}
+        file.close();
 	}
 	User& UserManager::GetSystemUser()
 	{

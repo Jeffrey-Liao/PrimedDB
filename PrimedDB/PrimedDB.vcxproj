@@ -77,6 +77,7 @@
     <IncludePath>D:\Code\Library\boost_1_89_0\boost\asio;D:\Code\C++\PrimedDB\PrimedDB\externalLib\cryptopp890;D:\Code\C++\PrimedDB\PrimedDB\header;D:\Code\C++\PrimedDB\PrimedDB\testheader;$(IncludePath)</IncludePath>
     <LibraryPath>D:\Code\Library\boost_1_89_0\lib64-msvc-14.3;D:\Code\C++\PrimedDB\PrimedDB\externalLib\cryptopp890\x64\Output\Release;$(LibraryPath)</LibraryPath>
     <ExternalIncludePath>D:\Code\C++\PrimedDB\PrimedDB\testheader;$(ExternalIncludePath)</ExternalIncludePath>
+    <OutDir>D:\Code\C++\PrimedDB\PrimedDB\bin</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -195,6 +196,7 @@
     <ClInclude Include="header\Primize.h" />
     <ClInclude Include="header\Record.h" />
     <ClInclude Include="header\Server.h" />
+    <ClInclude Include="header\ServerCommand.h" />
     <ClInclude Include="header\Session.h" />
     <ClInclude Include="header\Setting.h" />
     <ClInclude Include="header\Singleton.h" />
