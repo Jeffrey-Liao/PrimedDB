@@ -11,7 +11,7 @@
 #include <optional>
 #include "Singleton.h"
 #include "User.h"
-#include "Transection.h"
+#include "Transaction.h"
 #include "TableManager.h"
 #include "Table.h"
 #include "Column.h"
@@ -168,7 +168,7 @@ namespace liao::Compiler
 		Compiler();
 	public:
 
-		// 主编译函数 - 输入SQL语句，输出Transection
+		// 主编译函数 - 输入SQL语句，输出Transaction
 		std::future<Result> compile(PrimedDB::UserPtr user, const std::string& sql);
 
 	};

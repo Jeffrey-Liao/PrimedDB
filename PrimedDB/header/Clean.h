@@ -5,12 +5,11 @@
 
 class Clean
 {
-	std::vector<std::string> m_tables;
+
 public:
+	std::vector<std::string> m_tables;
 	Clean();
 	Clean(std::vector<std::string>& tables);
-
-	unsigned int size() const;
 	void clear();
 
 };

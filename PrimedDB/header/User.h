@@ -11,7 +11,7 @@ namespace liao::PrimedDB {
 		std::string m_password;
 		UserLevel m_level;
 		std::unordered_map<std::string, TablePtr> m_tables;
-		std::deque<Transection> m_pendingOperations;
+		std::deque<Transaction> m_pendingOperations;
 	private:
 		User(const User&) = delete;
 		void constructFromFile(const std::string&);
@@ -43,7 +43,7 @@ namespace liao::PrimedDB {
 		void changePassword(const std::string& rawText);
 		void setPassword(std::string& hash);
 		void setLevel(UserLevel level);
-		void submit(Transection&& operation);
+		void submit(Transaction&& operation);
 		void commit();
 		std::string toString() const;
 		TablePtr operator[](const std::string& name);

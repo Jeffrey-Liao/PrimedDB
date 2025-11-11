@@ -3,7 +3,7 @@
 #include "DataFile.h"
 #include "Singleton.h"
 #include "TableManager.h"
-#include "Transection.h"
+#include "Transaction.h"
 
 namespace liao::PrimedDB
 {
@@ -22,7 +22,7 @@ namespace liao::PrimedDB
 		std::future<void> m_terminate;
 		std::atomic<bool> m_notify = false, m_end = false;
 		std::condition_variable m_cv;
-		std::deque<Transection> m_pendingOperations;
+		std::deque<Transaction> m_pendingOperations;
 		mutable ShareMutex m_mutex;
 		mutable Mutex m_cvMutex;
 
@@ -32,11 +32,11 @@ namespace liao::PrimedDB
 		unsigned allocate();
 		void manager();
 		void rearrange(std::deque<int>&, std::vector<bool>&);
-		void handle(Transection&);
+		void handle(Transaction&);
 		void promote(unsigned pos);
 	public:
 		static unsigned totalRecord(unsigned bytes);
-		void operate(Transection&);
+		void operate(Transaction&);
 		//table pointer and line number indicate the start of the block
 		unsigned allocate(TablePtr, int pos = -1);
 		unsigned allocateWithOutRead(TablePtr, int pos = -1);

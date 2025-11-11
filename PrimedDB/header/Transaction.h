@@ -24,7 +24,7 @@ namespace liao::PrimedDB
 		None
 	};
 	
-	class Transection
+	class Transaction
 	{
 		std::string m_id;
 		std::string m_table;
@@ -37,13 +37,14 @@ namespace liao::PrimedDB
 		SCharPtr m_memory;
 
 	public:
-		Transection();
-		Transection(const std::string& oprtor,const std::string&, SQLType operation, int blockId, int location, unsigned size = 0, UCharPtr memory = nullptr);
-		Transection(const std::string& oprtor, const std::string& name,const std::string& str, bool neg = false);
-		Transection(const std::string& oprtor, const std::string& name, bool neg = false);
-		Transection(Transection&&) noexcept;
-		void operator=(Transection&&) noexcept;
+		Transaction();
+		Transaction(const std::string& oprtor,const std::string&, SQLType operation, int blockId, int location, unsigned size = 0, UCharPtr memory = nullptr);
+		Transaction(const std::string& oprtor, const std::string& name,const std::string& str, bool neg = false);
+		Transaction(const std::string& oprtor, const std::string& name, bool neg = false);
+		Transaction(Transaction&&) noexcept;
+		void operator=(Transaction&&) noexcept;
 		SQLType getType() const;
+		const std::string& getId() const;
 		const std::string& getOperator()const;
 		const std::string& getTable() const;
 		int getBlockId() const;
@@ -57,6 +58,6 @@ namespace liao::PrimedDB
 		std::string toString() const;
 		void fromString(const std::string& str);
 		void negFromString(const std::string& str);
-        ~Transection();
+        ~Transaction();
 	};
 }

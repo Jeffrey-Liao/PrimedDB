@@ -25,13 +25,14 @@ namespace liao::PrimedDB
 			
 			while (!m_pendingOperations.empty())
 			{
-				Transection transection;
+				Transaction transaction;
 				{
 					WriteLock lock(m_mutex);
-					transection = std::move(m_pendingOperations.front());
+					transaction = std::move(m_pendingOperations.front());
 					m_pendingOperations.pop_front();
 				}
-				handle(transection);
+				StaticFunc::WriteInfo("Transaction", std::format("Handling Transaction [{}]", transaction.getId()));
+				handle(transaction);
 			}
 			m_notify = false;
 			if (m_end)
@@ -100,7 +101,7 @@ namespace liao::PrimedDB
 			m_active.push_back(pos);
 		}
 	}
-	void BlockManager::handle(Transection& transection)
+	void BlockManager::handle(Transaction& transection)
 	{
 		if (transection.isValid())
 		{
@@ -157,7 +158,7 @@ namespace liao::PrimedDB
 	{
 		return Util::Setting::Get().getBlockSize() / bytes;
 	}
-	void BlockManager::operate(Transection& transection)
+	void BlockManager::operate(Transaction& transection)
 	{
 		WriteLock lock(m_mutex);
 		m_pendingOperations.emplace_back(std::move(transection));

@@ -452,7 +452,7 @@ namespace liao::PrimedDB
 		auto user = UserManager::Get().get(userName);
 		if (user != nullptr)
 		{
-			user->submit(Transection(userName, m_name, SQLType::Insert, blockPos.first, blockPos.second, size, std::move(memory)));
+			user->submit(Transaction(userName, m_name, SQLType::Insert, blockPos.first, blockPos.second, size, std::move(memory)));
 		}
 	}
 	void Table::update(const std::string& userName, unsigned position, UCharPtr memory, unsigned size)
@@ -460,14 +460,14 @@ namespace liao::PrimedDB
 		auto blockPos = convertBlockPos(position);
 		WriteLock lock(m_mutex);
 		auto user = UserManager::Get().get(userName);
-		user->submit(Transection(userName, m_name, SQLType::Update, blockPos.first, blockPos.second, size, std::move(memory)));
+		user->submit(Transaction(userName, m_name, SQLType::Update, blockPos.first, blockPos.second, size, std::move(memory)));
 	}
 	void Table::remove(const std::string& userName, unsigned position)
 	{
 		auto blockPos = convertBlockPos(position);
 		WriteLock lock(m_mutex);
 		auto user = UserManager::Get().get(userName);
-		user->submit(Transection(userName, m_name, SQLType::Delete, blockPos.first, blockPos.second));
+		user->submit(Transaction(userName, m_name, SQLType::Delete, blockPos.first, blockPos.second));
 	}
 	void Table::rollback(const string& name)
 	{
@@ -496,7 +496,7 @@ namespace liao::PrimedDB
 			}
 		}
 		tranFile.close();
-		Transection transection(name,m_name,buffer,true);
+		Transaction transection(name,m_name,buffer,true);
 		BlockManager::Get().operate(transection);
 	}
 	void Table::addBlock(unsigned pos)

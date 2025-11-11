@@ -1303,7 +1303,7 @@ namespace liao::Compiler
 			{
 				std::string inner = sql;
 				// 验证SQL语句
-				Transection transection;
+				Transaction transection;
 				Record record;
 				toLower(inner);
 				if (inner == "commit"|| inner == "commit;")

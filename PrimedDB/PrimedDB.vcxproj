@@ -202,7 +202,7 @@
     <ClInclude Include="header\Timer.h" />
     <ClInclude Include="header\TimeStamp.h" />
     <ClInclude Include="header\TokenList.h" />
-    <ClInclude Include="header\Transection.h" />
+    <ClInclude Include="header\Transaction.h" />
     <ClInclude Include="header\User.h" />
     <ClInclude Include="header\UserManager.h" />
   </ItemGroup>

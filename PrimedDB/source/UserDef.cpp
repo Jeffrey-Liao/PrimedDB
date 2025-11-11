@@ -203,7 +203,7 @@ namespace liao::PrimedDB
 		WriteLock lock(m_mutex);
 		m_level = level;
 	}
-	void User::submit(Transection&& operation)
+	void User::submit(Transaction&& operation)
 	{
 		WriteLock lock(m_mutex);
 		m_pendingOperations.emplace_back(std::move(operation));

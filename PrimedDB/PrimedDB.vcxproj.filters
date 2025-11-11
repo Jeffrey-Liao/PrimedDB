@@ -183,7 +183,7 @@
     <ClInclude Include="header\ErrorManager.h">
       <Filter>Util\header</Filter>
     </ClInclude>
-    <ClInclude Include="header\Transection.h">
+    <ClInclude Include="header\Transaction.h">
       <Filter>Storage\Header</Filter>
     </ClInclude>
     <ClInclude Include="header\DiskManager.h">
