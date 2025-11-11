@@ -175,6 +175,7 @@
     <ClInclude Include="header\Block.h" />
     <ClInclude Include="header\BlockManager.h" />
     <ClInclude Include="header\ClassInfor.h" />
+    <ClInclude Include="header\Clean.h" />
     <ClInclude Include="header\Column.h" />
     <ClInclude Include="header\CommandLine.h" />
     <ClInclude Include="header\Compiler.h" />

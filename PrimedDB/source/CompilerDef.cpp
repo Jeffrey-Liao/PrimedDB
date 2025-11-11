@@ -1051,7 +1051,7 @@ namespace liao::Compiler
 				bool exit = false;
 				if (ptr == nullptr)
 				{
-					internal += std::format("Table {} do not exists", tableName);
+					internal += std::format("Table [{}] do not exists", tableName);
 					return Record();
 				}
 				else
@@ -1081,7 +1081,7 @@ namespace liao::Compiler
 						auto& valueList = operations[2];
 						if (columnList.size() != ptr->columnSize() || columnList.size() != valueList.size())
 						{
-							internal += std::format("Column number do not match with definition of {}", ptr->getName());
+							internal += std::format("Column number do not match with definition of [{}]", ptr->getName());
 							error = std::move(internal);
 							return Record();
 						}
@@ -1091,7 +1091,7 @@ namespace liao::Compiler
 						}))
 						{
 							exit = true;
-                            internal += std::format("Column name not found in {}", ptr->getName());
+                            internal += std::format("Column name not found in [{}]", ptr->getName());
 							error = std::move(internal);
 							return Record();
 						};
@@ -1128,7 +1128,7 @@ namespace liao::Compiler
 								{
 									if (columnInfo[n].getType() != PrimedDB::DataType::Varchar)
 									{
-										internal += std::format("Given type not match the defined type {}", ptr->getColumns()[n].getName());
+										internal += std::format("Given type does not match the defined type [{}]", ptr->getColumns()[n].getName());
 
 										error = std::move(internal);
 										return Record();

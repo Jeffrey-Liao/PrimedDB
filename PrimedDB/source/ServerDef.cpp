@@ -256,7 +256,7 @@ namespace liao::Net
     }
     void Server::writeMessage(std::shared_ptr<asio::ip::tcp::socket> socket,std::string& message)
     {
-        int size= message.size();
+        int size = message.size();
         message = to_string(size) + "\n" + message;
         shared_ptr<string> messageBody = make_shared<string>(std::move(message));
         if (messageBody->back() != '\n')
@@ -269,7 +269,7 @@ namespace liao::Net
                 }
                 else
                 {
-                    CallInfo("Return", std::format("Total message bytes :", size));
+                    CallInfo("Return", std::format("Total message bytes : {}", size));
                     CallInfo("Return", std::format("InformationBody : \n[\n{}]", *messageBody));
                 }
             });

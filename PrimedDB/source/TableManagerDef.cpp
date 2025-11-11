@@ -35,7 +35,7 @@ namespace liao::PrimedDB
 					m_tables.push_back(std::make_shared<Table>(buffer, labels));
 					m_tables.back()->read();
 					m_nameIndex[m_tables.back()->getName()] = m_tables.back();
-					StaticFunc::WriteInfo("TableManager", std::format("Table {} Loaded", m_tables.back()->getName()));
+					StaticFunc::WriteInfo("TableManager", std::format("Table [{}] Loaded", m_tables.back()->getName()));
 				}
 			}
 			m_tableFile.clear();
@@ -67,7 +67,7 @@ namespace liao::PrimedDB
 			m_tables.back()->read();
 		}
 		update();
-		StaticFunc::WriteInfo("TableManager", std::format("New table {} created successfully by User {}", m_tables.back()->getName(), operater.getName()));
+		StaticFunc::WriteInfo("TableManager", std::format("New table [{}] created successfully by User [{}]", m_tables.back()->getName(), operater.getName()));
 		return m_tables.back();
 	}
 	bool TableManager::exist(const std::string& name)const

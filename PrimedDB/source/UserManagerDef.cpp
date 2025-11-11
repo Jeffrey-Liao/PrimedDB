@@ -16,6 +16,7 @@ namespace liao::PrimedDB
 	
 	UserManager::UserManager()
 	{
+		StaticFunc::WriteInfo("UserManager", "Initializing UserManager.");
 		fstream file(Util::Setting::Get().getUserFile(), ios::out | ios::in);
 		string cache, name;
 		UserPtr ptr = constructSystem(cache);
@@ -27,16 +28,11 @@ namespace liao::PrimedDB
 				getline(file, cache);
                 if (cache.empty())
                 {
-					if (m_allUsers.empty())
-					{
-						file.clear();
-						ptr = constructSystem(cache);
-						file << ptr->toString() << endl;
-					}
 					break;
                 }
 				cache.find_first_of(":");
 				name = std::move(cache.substr(0,cache.find_first_of(":")));
+				StaticFunc::WriteInfo("UserManager", std::format("User [{}] loaded.",name));
 				if (name == "system")
 				{
 					ptr = constructSystem(cache);
@@ -44,6 +40,12 @@ namespace liao::PrimedDB
 				else
 					ptr = make_shared<User>(cache);
 				m_allUsers[name] = ptr;
+			}
+			if (m_allUsers.empty())
+			{
+				file.clear();
+				ptr = constructSystem(cache);
+				file << ptr->toString() << endl;
 			}
 		}
         file.close();
@@ -94,6 +96,7 @@ namespace liao::PrimedDB
 		file.close();
 		WriteLock lock(m_mutex);
 		m_allUsers.emplace(name, ptr);
+        StaticFunc::WriteInfo("UserManager", std::format("User [{}] created.",name));
 		return m_allUsers[name];
 	}
 
@@ -126,15 +129,17 @@ namespace liao::PrimedDB
 		{
             ReadLock lock(m_mutex);
 			user = m_allUsers[name];
-		} 
+		}
 		return user->validate(User::PassWordHash(password));
 	}
 	bool UserManager::login(const std::string& name, const std::string& password)
 	{
 		if (allowLogin(name, password))
 		{
+			StaticFunc::WriteInfo("UserManager", std::format("User [{}] logged in.",name));
 			return true;
 		}
+		StaticFunc::WriteInfo("UserManager", std::format("User [{}] login failed.", name));
 		return false;
 	}
 	/////////////////////////////////////////////////////

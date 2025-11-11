@@ -243,5 +243,8 @@
     <ClInclude Include="header\ServerCommand.h">
       <Filter>Net\header</Filter>
     </ClInclude>
+    <ClInclude Include="header\Clean.h">
+      <Filter>Test\TestHeader</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

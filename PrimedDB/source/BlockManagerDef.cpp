@@ -68,7 +68,7 @@ namespace liao::PrimedDB
 			m_blocks[newBlock].assign(table, pos);
 		}
 		StaticFunc::WriteInfo("BlockManager",
-			std::format("Allocate block id:{} to table:{} success",
+			std::format("Allocate block id:[{}] to table:[{}] success",
 				std::to_string(newBlock), table->getName()));
 		return newBlock;
 	}
@@ -87,7 +87,7 @@ namespace liao::PrimedDB
 			table->getOwned()[pos / StaticFunc::MaxSizeForBlock(table->totalByte())] = newBlock;
 		}
 		StaticFunc::WriteInfo("BlockManager",
-			std::format("Allocate block id:{} to table:{} success",
+			std::format("Allocate block id:[{}] to table:[{}] success",
 				std::to_string(newBlock), table->getName()));
 		return newBlock;
 	}
