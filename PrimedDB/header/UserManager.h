@@ -1,8 +1,7 @@
 #pragma once
-#include "Session.h"
+#include "User.h"
 namespace liao::PrimedDB
 {
-	class Session;
 	class UserManager:public Singleton<UserManager>
 	{
 		INVITESINGLETON;

@@ -47,6 +47,35 @@ namespace liao::Net
         string message = "use exit or quit command terminated the connection";
         CallInfo("ClientDisconnect", message);
     }
+    void Server::validateUser(SocketPtr socket, const std::string& userName, const std::string& password, std::string& reply)
+    {
+        auto& userManager = UserManager::Get();
+        if (userManager.exist(userName))
+        {
+            auto ptr = PrimedDB::UserManager::Get().get(userName);
+            if (m_user_clients.contains(ptr))
+            {
+                asio::write(*socket, asio::buffer(TERMINATE));
+            }
+            if (UserManager::Get().login(userName, password))
+            {
+                reply = "Login Success";
+                if (socket->is_open())
+                {
+                    CallInfo(userName, reply);
+                    asio::write(*socket, asio::buffer(SUCCESS));
+                    auto ptr = PrimedDB::UserManager::Get().get(userName);
+                    this->m_user_clients[ptr] = socket;
+                    doRead(socket);
+                    return;
+                }
+            }
+            else
+                reply = "Password incorrect.";
+        }
+        else
+            reply = "User not exist.";
+    }
     void Server::authenticate(const string& id)
     {
         chrono::seconds timeout = chrono::seconds(3);
@@ -58,7 +87,7 @@ namespace liao::Net
         //future<bool> timer = sleep(socket,timeout);
         asio::async_read_until(*socket, *buffer, TERMINAL, [this, buffer, socket,id](const std::error_code& error, size_t bytes_transferred)
             {
-                std::string m_message;
+                std::string reply;
                 if (!error)
                 {
                     m_timer->cancel();
@@ -69,36 +98,23 @@ namespace liao::Net
                         auto pos = message.find(":");
                         if (pos != message.npos)
                         {
-                            string name = message.substr(0, pos),
+                            string userName = message.substr(0, pos),
                                 password = message.substr(pos + 1);
-                            if (UserManager::Get().login(name, password))
-                            {
-                                m_message = "Login Success";
-                                if (socket->is_open())
-                                {
-                                    CallInfo(name, m_message);
-                                    asio::write(*socket, asio::buffer(SUCCESS));
-                                    auto ptr = PrimedDB::UserManager::Get().get(name);
-                                    this->m_user_clients[ptr] = socket;
-                                    m_unauthorized.erase(id);
-                                    doRead(socket);
-                                    return;
-                                }
-                            }
-                            else
-                                m_message = "User name or password incorrect.";
+                            validateUser(socket, userName, password, reply);
+                            WriteLock lock(m_hashMutex);
+                            m_unauthorized.erase(id);
                         }
                         else
-                            m_message = "The format of authentication information incorrect.";
+                            reply = "The format of authentication information incorrect.";
                     }
                     else
                     {
-                        m_message = "Nothing received";
+                        reply = "Nothing received";
                     }
                 }
                 if (socket->is_open())
-                    asio::write(*socket, asio::buffer(m_message + "\n"));
-                CallInfo("LoginFailed", m_message);
+                    asio::write(*socket, asio::buffer(reply + "\n"));
+                CallInfo("LoginFailed", reply);
                 socket->close();
             });
         m_timer->async_wait([socket,this,id](const std::error_code& error)

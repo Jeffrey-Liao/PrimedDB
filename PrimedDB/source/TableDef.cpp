@@ -2,7 +2,6 @@
 #include "Table.h"
 #include "User.h"
 #include "UserManager.h"
-#include "test/ErrorManagerTest.h"
 USESTD;
 namespace liao::PrimedDB
 {

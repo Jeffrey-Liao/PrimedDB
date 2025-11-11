@@ -81,17 +81,11 @@
     <ClCompile Include="source\ClassInforDef.cpp">
       <Filter>Infor\Source</Filter>
     </ClCompile>
-    <ClCompile Include="TestMain.cpp">
-      <Filter>Test</Filter>
-    </ClCompile>
     <ClCompile Include="source\HashContainerDef.cpp">
       <Filter>Primed\Source</Filter>
     </ClCompile>
     <ClCompile Include="source\PrimeNumberConvertDef.cpp">
       <Filter>Primed\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="Inactive.cpp">
-      <Filter>Test</Filter>
     </ClCompile>
     <ClCompile Include="source\ColumnDef.cpp">
       <Filter>Storage\Source</Filter>
@@ -111,14 +105,8 @@
     <ClCompile Include="source\UserManagerDef.cpp">
       <Filter>Storage\Source</Filter>
     </ClCompile>
-    <ClCompile Include="source\SessionDef.cpp">
-      <Filter>Storage\Source</Filter>
-    </ClCompile>
     <ClCompile Include="source\ErrorManagerDef.cpp">
       <Filter>Util\source</Filter>
-    </ClCompile>
-    <ClCompile Include="source\PageDef.cpp">
-      <Filter>Storage\Source</Filter>
     </ClCompile>
     <ClCompile Include="source\GlobalDef.cpp">
       <Filter>Util\source</Filter>
@@ -128,9 +116,6 @@
     </ClCompile>
     <ClCompile Include="source\PrimizeDef.cpp">
       <Filter>Primed\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="source\test\ErrorManagerTestDef.cpp">
-      <Filter>Test\TestSource</Filter>
     </ClCompile>
     <ClCompile Include="source\BlockDef.cpp">
       <Filter>Storage\Source</Filter>
@@ -156,6 +141,7 @@
     <ClCompile Include="source\RecordDef.cpp">
       <Filter>Storage\Source</Filter>
     </ClCompile>
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="header\Log.h">
@@ -191,9 +177,6 @@
     <ClInclude Include="header\UserManager.h">
       <Filter>Storage\Header</Filter>
     </ClInclude>
-    <ClInclude Include="header\Session.h">
-      <Filter>Storage\Header</Filter>
-    </ClInclude>
     <ClInclude Include="header\TableManager.h">
       <Filter>Storage\Header</Filter>
     </ClInclude>
@@ -209,9 +192,6 @@
     <ClInclude Include="header\ControlManager.h">
       <Filter>Storage\Header</Filter>
     </ClInclude>
-    <ClInclude Include="header\Page.h">
-      <Filter>Storage\Header</Filter>
-    </ClInclude>
     <ClInclude Include="header\Global.h">
       <Filter>Util\header</Filter>
     </ClInclude>
@@ -223,9 +203,6 @@
     </ClInclude>
     <ClInclude Include="header\Timer.h">
       <Filter>Util\header</Filter>
-    </ClInclude>
-    <ClInclude Include="header\test\ErrorManagerTest.h">
-      <Filter>Test\TestHeader</Filter>
     </ClInclude>
     <ClInclude Include="header\Singleton.h">
       <Filter>Util\header</Filter>

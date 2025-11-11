@@ -28,6 +28,7 @@ namespace liao::Net
         asio::io_context& m_io;
         std::shared_ptr<asio::steady_timer> m_timer;
         std::mutex m_mutex;
+        std::shared_mutex m_hashMutex;
 
         void doAccept();
         void doRead(SocketPtr socket);
@@ -37,7 +38,9 @@ namespace liao::Net
         auto getip(const std::string&);
         void stream2string(std::shared_ptr<asio::streambuf> buffer, std::string& message);
         void exitAct(SocketPtr);
+        void validateUser(SocketPtr socket,const std::string& userName,const std::string& password, std::string& reply);
         void authenticate(const std::string& id);
+
         void sendStructure(std::shared_ptr<asio::ip::tcp::socket> socket);
         void writeMessage(std::shared_ptr<asio::ip::tcp::socket> socket,std::string& message);
     public:

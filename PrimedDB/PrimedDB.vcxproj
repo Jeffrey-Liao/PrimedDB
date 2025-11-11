@@ -146,7 +146,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Inactive.cpp" />
     <ClCompile Include="source\BlockDef.cpp" />
     <ClCompile Include="source\BlockManagerDef.cpp" />
     <ClCompile Include="source\ClassInforDef.cpp" />
@@ -156,23 +155,20 @@
     <ClCompile Include="source\GlobalDef.cpp" />
     <ClCompile Include="source\HashContainerDef.cpp" />
     <ClCompile Include="source\LogDef.cpp" />
-    <ClCompile Include="source\PageDef.cpp" />
     <ClCompile Include="source\ParserDef.cpp" />
     <ClCompile Include="source\PrimeNumberConvertDef.cpp" />
     <ClCompile Include="source\PrimizeDef.cpp" />
     <ClCompile Include="source\RecordDef.cpp" />
     <ClCompile Include="source\ServerDef.cpp" />
-    <ClCompile Include="source\SessionDef.cpp" />
     <ClCompile Include="source\SettingDef.cpp" />
     <ClCompile Include="source\StructFileDef.cpp" />
     <ClCompile Include="source\TableDef.cpp" />
     <ClCompile Include="source\TableManagerDef.cpp" />
-    <ClCompile Include="source\test\ErrorManagerTestDef.cpp" />
     <ClCompile Include="source\TimeStampDef.cpp" />
     <ClCompile Include="source\TransectionDef.cpp" />
     <ClCompile Include="source\UserDef.cpp" />
     <ClCompile Include="source\UserManagerDef.cpp" />
-    <ClCompile Include="TestMain.cpp" />
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="header\AsyncService.h" />
@@ -190,21 +186,18 @@
     <ClInclude Include="header\Global.h" />
     <ClInclude Include="header\HashContainer.h" />
     <ClInclude Include="header\Log.h" />
-    <ClInclude Include="header\Page.h" />
     <ClInclude Include="header\Parser.h" />
     <ClInclude Include="header\PrimeNumberConvert.h" />
     <ClInclude Include="header\Primize.h" />
     <ClInclude Include="header\Record.h" />
     <ClInclude Include="header\Server.h" />
     <ClInclude Include="header\ServerCommand.h" />
-    <ClInclude Include="header\Session.h" />
     <ClInclude Include="header\Setting.h" />
     <ClInclude Include="header\Singleton.h" />
     <ClInclude Include="header\StructFile.h" />
     <ClInclude Include="header\Syntax.h" />
     <ClInclude Include="header\Table.h" />
     <ClInclude Include="header\TableManager.h" />
-    <ClInclude Include="header\test\ErrorManagerTest.h" />
     <ClInclude Include="header\Timer.h" />
     <ClInclude Include="header\TimeStamp.h" />
     <ClInclude Include="header\TokenList.h" />
