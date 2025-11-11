@@ -6,7 +6,7 @@
 #include <ranges>
 #include <iostream>
 
-#include "ErrorManager.h"
+#include "ErrorManager.h" 
 #include "Log.h"
 
 using namespace liao::PrimedDB;
@@ -466,7 +466,16 @@ namespace liao::Compiler
 	// 辅助函数实现
 	void Compiler::toLower(std::string& str)
 	{
-		std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+		std::transform(str.begin(), str.end(), str.begin(), [](char c)
+		{
+				if (c !='\n')
+				{
+					c = std::tolower(c);
+				}
+				else
+					c = ' ';
+				return c;
+		});
 	}
 
 	std::string Compiler::trim(const std::string& str)
