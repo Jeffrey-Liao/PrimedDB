@@ -157,6 +157,8 @@ namespace liao::Compiler
 		static ExecuteBody ruleMatch(const std::vector<TokenType>&,std::deque<Token>&);
 		static ExecuteBody syntaxFailed(std::string&, const std::string&);
 		static ExecuteBody syntaxCheck(PrimedDB::UserPtr,std::deque<Token>& tokens,std::string&);
+
+
 		static PrimedDB::Record execute(PrimedDB::UserPtr, ExecuteBody&, std::string&);
 
 
@@ -168,7 +170,7 @@ namespace liao::Compiler
 		Compiler();
 	public:
 
-		// 主编译函数 - 输入SQL语句，输出Transaction
+		// compile function
 		std::future<Result> compile(PrimedDB::UserPtr user, const std::string& sql);
 
 	};

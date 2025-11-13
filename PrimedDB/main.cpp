@@ -40,4 +40,6 @@ int main()
 	else
 		cout << "Primed DB only allow one instance running at the same time. :(\n";
 	system("pause");
+
+
 }
