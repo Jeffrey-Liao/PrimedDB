@@ -38,7 +38,7 @@ namespace liao::Net
         auto getip(const std::string&);
         void stream2string(std::shared_ptr<asio::streambuf> buffer, std::string& message);
         void exitAct(SocketPtr);
-        void validateUser(SocketPtr socket,const std::string& userName,const std::string& password, std::string& reply);
+        bool validateUser(SocketPtr socket,const std::string& userName,const std::string& password, std::string& reply);
         void authenticate(const std::string& id);
 
         void sendStructure(std::shared_ptr<asio::ip::tcp::socket> socket);

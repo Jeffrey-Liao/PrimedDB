@@ -43,11 +43,11 @@ namespace liao::Net
     }
     void Server::exitAct(SocketPtr socket)
     {
-        asio::write(*socket, asio::buffer(TERMINATE));
+        asio::write(*socket, asio::buffer(TERMINATE.size()+"\n"+TERMINATE));
         string message = "use exit or quit command terminated the connection";
         CallInfo("ClientDisconnect", message);
     }
-    void Server::validateUser(SocketPtr socket, const std::string& userName, const std::string& password, std::string& reply)
+    bool Server::validateUser(SocketPtr socket, const std::string& userName, const std::string& password, std::string& reply)
     {
         auto& userManager = UserManager::Get();
         if (userManager.exist(userName))
@@ -67,7 +67,7 @@ namespace liao::Net
                     auto ptr = PrimedDB::UserManager::Get().get(userName);
                     this->m_user_clients[ptr] = socket;
                     doRead(socket);
-                    return;
+                    return true;
                 }
             }
             else
@@ -75,6 +75,7 @@ namespace liao::Net
         }
         else
             reply = "User not exist.";
+        return false;
     }
     void Server::authenticate(const string& id)
     {
@@ -100,9 +101,10 @@ namespace liao::Net
                         {
                             string userName = message.substr(0, pos),
                                 password = message.substr(pos + 1);
-                            validateUser(socket, userName, password, reply);
                             WriteLock lock(m_hashMutex);
                             m_unauthorized.erase(id);
+                            if (validateUser(socket, userName, password, reply))
+                                return;
                         }
                         else
                             reply = "The format of authentication information incorrect.";
