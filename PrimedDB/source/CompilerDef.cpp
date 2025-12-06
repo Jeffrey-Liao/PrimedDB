@@ -1241,6 +1241,23 @@ namespace liao::Compiler
 			Record record;
 			if (columns.size() == 1 && columns[0].m_type == DataType::All)
 			{
+				if (operations.size() >= 3)
+				{
+					auto& exp = operations[3];
+					bool r = true;
+					string message;
+					if (ptr->existColumn(exp[0].content))
+					{
+						r = false;
+						message = exp[0].content;
+					}
+					if (r)
+					{
+						internal += std::format("Column {} do not exists", message);
+						error = std::move(internal);
+						return Record();
+					}
+				}
 				record = ptr->select();
 				record.all();
 			}

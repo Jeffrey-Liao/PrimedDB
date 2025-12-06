@@ -7,8 +7,6 @@ namespace liao::Util
     static TimeStamp NOW = TimeStamp::Now();
     static void ErrorLog(Error& error)
     {
-
-        ;
         Infor::Log::Get()[Infor::LogType::Error].openToFile("error"+ NOW.getDate()).split('-') << error.m_name << error.m_message << error.m_info << Infor::Log::LogEndl;
     }
     static void FatalLog(Error& error)

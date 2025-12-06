@@ -82,6 +82,7 @@ namespace liao::Math
             else
                 convert = static_cast<unsigned int>(
                     *((unsigned int*)(origin + n)));
+            n += 4;
             Math::PrimeNumberConvert::generate_big(convert, 9);
             recordNumber *= convert;
         }

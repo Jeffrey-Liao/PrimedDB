@@ -142,15 +142,6 @@
       <Filter>Storage\Source</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="source\test\TestCoreDef.cpp">
-      <Filter>Test\TestSource</Filter>
-    </ClCompile>
-    <ClCompile Include="source\TestMain.cpp">
-      <Filter>Test</Filter>
-    </ClCompile>
-    <ClCompile Include="source\test\TransactionTest.cpp">
-      <Filter>Test\TestSource</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="header\Log.h">
@@ -251,15 +242,6 @@
     </ClInclude>
     <ClInclude Include="header\ServerCommand.h">
       <Filter>Net\header</Filter>
-    </ClInclude>
-    <ClInclude Include="header\test\TestCore.h">
-      <Filter>Test\TestHeader</Filter>
-    </ClInclude>
-    <ClInclude Include="header\test\Clean.h">
-      <Filter>Test\TestHeader</Filter>
-    </ClInclude>
-    <ClInclude Include="header\test\TransactionTest.h">
-      <Filter>Test\TestHeader</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -19,6 +19,7 @@ namespace liao::PrimedDB
 			}
 		}
 		m_include.resize(m_title.size(), false);
+		StaticFunc::WriteInfo("Record", "Record view initializing");
 	}
 	Record::Record(bool valid)
 		:m_valid(valid)
@@ -28,6 +29,7 @@ namespace liao::PrimedDB
 	Record::Record(std::unordered_map<std::string, int>& header, RecordData& reference)
 		:m_values(std::move(reference)),m_valid(true)
 	{
+		StaticFunc::WriteInfo("Record","Record created");
 		constructColumnView(header);
 	}
 	Record::Record(Record&& move) noexcept
@@ -48,6 +50,8 @@ namespace liao::PrimedDB
 	std::string Record::format() const
 	{
 		std::string result;
+		if (m_include.empty())
+			return result;
 		if (m_valid)
 		{
 			for (int n = 0 ;n< m_title.size();++n)

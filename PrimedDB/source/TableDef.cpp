@@ -535,32 +535,35 @@ namespace liao::PrimedDB
 				else if (column.getType() == DataType::Varchar)
 					tempRecordNum *= Math::PrimeNumberConvert::generateFromString(column_value[column.getName()]);
 			}
-
 		}
+		if (tempRecordNum == 1)
+			return {};
 		for (unsigned n = 0, m = 0;n<m_owned.size()&&m<m_size;++n)
 		{
 			if (m_owned[n] == -1)
 				BlockManager::Get().allocate(shared_from_this(),n * StaticFunc::MaxSizeForBlock(totalByte()));
-			vector<char*>& records = BlockManager::Get().get_noLock(n).getRecords();
-			for (auto& record:records)
+			auto& block = BlockManager::Get().get_noLock(n);
+			char* records = block.reference();
+			auto total = totalByte();
+			for (int m = 0,c = 0;m<block.max();m+=total)
 			{
-				if (m >= m_available.size())
+				if (c >= m_available.size())
 					break;
-				if (!m_available[m])
+				if (!m_available[c])
 					continue;
-				char* recordNum = record + m_primedSize;
+				char* current = records + m;
 				mpz_import(cmp.get_mpz_t(),
-					m_recordByte,        // 字节数
-					Math::isBigEndian() ? 1 : -1,                 // 大端序（1 = most significant word first）
-					1, // 每个“单位”的大小（1 字节）
-					0,                 // 无符号（0 = least significant byte first within word，但这里单位是1字节，所以无影响）
-					0,                 // 无填充位
-					recordNum);
+					m_recordByte
+					, Math::isBigEndian() ? 1 : -1, // 字节序
+					sizeof(char),             // 每个单位的大小
+					0,                        // 无特定顺序
+					0,                        // 无填充位
+					current + total - m_recordByte);
 				if (cmp == 0 || cmp % tempRecordNum != 0)
 				{
-					result[m] = false;
+					result[c] = false;
 				}
-				++m;
+				c++;
 			}
 		}
 		return result;

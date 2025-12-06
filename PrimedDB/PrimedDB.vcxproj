@@ -164,9 +164,6 @@
     <ClCompile Include="source\StructFileDef.cpp" />
     <ClCompile Include="source\TableDef.cpp" />
     <ClCompile Include="source\TableManagerDef.cpp" />
-    <ClCompile Include="source\TestMain.cpp" />
-    <ClCompile Include="source\test\TestCoreDef.cpp" />
-    <ClCompile Include="source\test\TransactionTest.cpp" />
     <ClCompile Include="source\TimeStampDef.cpp" />
     <ClCompile Include="source\TransectionDef.cpp" />
     <ClCompile Include="source\UserDef.cpp" />
@@ -201,9 +198,6 @@
     <ClInclude Include="header\Syntax.h" />
     <ClInclude Include="header\Table.h" />
     <ClInclude Include="header\TableManager.h" />
-    <ClInclude Include="header\test\Clean.h" />
-    <ClInclude Include="header\test\TestCore.h" />
-    <ClInclude Include="header\test\TransactionTest.h" />
     <ClInclude Include="header\Timer.h" />
     <ClInclude Include="header\TimeStamp.h" />
     <ClInclude Include="header\TokenList.h" />
